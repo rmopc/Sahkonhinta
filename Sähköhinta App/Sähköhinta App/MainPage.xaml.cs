@@ -1,0 +1,122 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Xamarin.Forms;
+using Newtonsoft.Json;
+using System.Net;
+using System.Net.Http;
+using Newtonsoft.Json.Linq;
+using System.Diagnostics;
+
+namespace Sähköhinta_App
+{
+
+    
+    public partial class MainPage : ContentPage
+    {
+        //DateTime today = DateTime.Today.ToLocalTime(); //Lokaali aikavyöhyke. addhours toimii tässä               
+        DateTime today = DateTime.Today.ToLocalTime().AddHours(15); //Lokaali aikavyöhyke, säädettävä tunteja               
+        DateTime yesterday = DateTime.Today.ToLocalTime().AddDays(-1);
+
+        //String nowTime = today.ToShortDateString();
+
+        DateTime today2 = new DateTime(DateTime.Today.Year, DateTime.Today.Month, DateTime.Today.Day); //tässä toimii nyt kuluva päivä, mutta heti vuorokauden alusta
+        String today3 = DateTime.Now.ToString("MM/dd/yyyy");
+        String dateHour = DateTime.Now.ToString("dd/MM/yyyy HH:mm");     
+
+        public MainPage()
+        {
+            InitializeComponent();
+            GetJsonAsync();
+            //Task.Run(() => GetJsonAsync());
+        }
+
+        public async Task GetJsonAsync()
+        {
+            var uri = new Uri("https://pakastin.fi/hinnat/prices");
+            HttpClient httpClient = new HttpClient();
+            var response = await httpClient.GetAsync(uri);
+            
+            if (response.IsSuccessStatusCode)
+            {               
+                var now = DateTime.Now;
+                int nowHour = now.Hour;
+                //var tempHour = new DateTime(now.Year, now.Month, now.Day);
+                
+                var content = await response.Content.ReadAsStringAsync();
+                string json = content.ToString();
+                var jsonObject = JObject.Parse(json);
+           
+                var prices = jsonObject["prices"];
+                var jsonArray = JArray.Parse(prices.ToString());
+
+                StringBuilder sb = new StringBuilder();
+                StringBuilder sb2 = new StringBuilder();
+
+                foreach (var item in jsonArray)
+                {                    
+                    string date =  item["date"].ToString();
+                    string trimmedDate = date.Substring(date.IndexOf(' ') + 1);   //siivotaan päivämäärä pois trimmaamalla kaikki ennen välilyöntiä, tarviiko tätä
+                    string displayDate = DateTime.Parse(trimmedDate).ToString("dd/MM/yyyy HH:mm"); //muutetaan päivämäärä string-muotoon
+                    string price = item["value"].ToString();
+                    //int price2 = int.Parse(price) / 100; //jatka tästä! eli suunnittele paremmin, jos ottaa pois kommentista ei Taskiä ajeta tai se on vain hidas. Pilko parsettava osa erikseen?
+
+                    //tämänhetkinen kellonaika
+                    if (date.Contains(today.ToString())) //tähän voi määritellä Datetime-arvoja tai hipsuissa kenoviivoin päivämäärän, tutkittava lisää. 
+                    {
+                        //Jos tämän lisää ifin ulkopuolelle, antaa koko listan
+                        sb.Append(displayDate + ", hinta: " + price + " €/MWh" + "\n");
+                    }
+
+                    //kaikki tämän vuodokauden rivit
+                    if (date.Contains(today.ToShortDateString())) 
+                    {
+                        string startTime = DateTime.Parse(displayDate).AddHours(1).ToString("HH:mm"); //koska JSON-datassa CET-ajat, lisätään yksi tunti
+                        string endTime = DateTime.Parse(displayDate).AddHours(2).ToString("HH:mm"); //päättymisaika on 1h alkamisajasta
+
+                        sb2.Append("Klo " + startTime + "-" + endTime + ", hinta: " + price + " €/MWh" + "\n");
+                    }
+                }
+
+                priceFieldNow.Text = "Hinta nyt: " + "\n" + sb.ToString();
+                priceFieldToday.Text = "Hinnat tänään: " + "\n" + sb2.ToString();
+                //testField.Text = "Nyt on: " + DateTime.Now.ToLocalTime().ToString("dd/MM/yyyy HH:mm");
+                testField.Text = "Nyt on: " + today;
+            }
+            else
+            {
+                await DisplayAlert("Virhe!", "Json-data ei ole saatavilla, tai siihen ei saatu yhteyttä", "OK");
+                testField.Text = "Virhe, ei yhteyttä?";
+            }
+        }
+
+
+        //public List<Price> GetPrices()
+        //{
+        //    var priceList = new List<Price>();
+
+        //    using (var httpClient = new HttpClient())
+        //    {
+        //        var uri = new Uri("https://pakastin.fi/hinnat/prices");
+        //        //HttpClient httpClient = new HttpClient();
+
+        //        var response = httpClient.GetAsync(uri).Result;
+        //        var responseContent = response.Content;
+        //        var responseString = responseContent.ReadAsStringAsync().Result;
+
+        //        dynamic prices = JArray.Parse(responseString) as JArray;
+
+        //        foreach (var pr in prices)
+        //        {
+        //            Price price = pr.ToObject<Price>();
+        //            priceList.Add(price);
+        //        }
+        //    }
+
+        //    return priceList;
+
+        }
+}
