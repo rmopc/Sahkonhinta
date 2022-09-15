@@ -5,9 +5,9 @@
 
     <StackLayout>
         <Frame BackgroundColor="Azure"  Padding="24" CornerRadius="0">
-            <Label Text="Sähkön hinta" HorizontalTextAlignment="Center" TextColor="Gray" FontSize="36"/>
+            <Label Text="Sähkön hinta" HorizontalTextAlignment="Center" TextColor="Gray" FontSize="20"/>
         </Frame>
-        <Label Text="Sähkön hinta" FontSize="Title" Padding="30,10,30,10" HorizontalTextAlignment="Center" />
+        <!--<Label Text="Sähkön hinta" FontSize="Title" Padding="30,10,30,10" HorizontalTextAlignment="Center" />-->
         <Label x:Name="statusField" Text="tilaa päivitetään..." FontSize="16" Padding="30,0,30,0" HorizontalTextAlignment="Center" />
         <!--<Button x:Name="checkPrices" Clicked="checkPrices_Clicked" Text="Tarkista hinta"/>-->
         <Label x:Name="priceFieldNow" Text="tietoja haetaan..." FontSize="16" Padding="30,0,30,0" HorizontalTextAlignment="Center" />

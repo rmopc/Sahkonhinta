@@ -36,11 +36,11 @@ namespace Sähköhinta_App
             InitializeComponent();
             GetJsonAsync();
             //Task.Run(() => GetJsonAsync());
-            Task.Run(async () => { await GetJsonAsync(); });
+            //Task.Run(async () => { await GetJsonAsync(); });
             statusField.Text = "Nyt on: " + today;
         }
 
-        public async Task GetJsonAsync()
+       async void GetJsonAsync()
         {
             var uri = new Uri("https://pakastin.fi/hinnat/prices");
             //var uri = new Uri("https://api.jsonbin.io/v3/qs/6321dfb4a1610e63862adec3");
@@ -49,7 +49,7 @@ namespace Sähköhinta_App
 
             if (response.IsSuccessStatusCode)
             {
-                statusField.Text = "Onnistui koodilla: " + response;
+                //statusField.Text = "Onnistui koodilla: " + response;
                 var content = await response.Content.ReadAsStringAsync();
                 string json = content.ToString();
                 var jsonObject = JObject.Parse(json);
@@ -76,24 +76,24 @@ namespace Sähköhinta_App
                 foreach (var item in jsonArray)
                 {
                     string date = item["date"].ToString();
-                    string trimmedDate = date.Substring(date.IndexOf(' ') + 1);   //siivotaan päivämäärä pois trimmaamalla kaikki ennen välilyöntiä, tarviiko tätä
-                    string displayDate = DateTime.Parse(trimmedDate).ToString("dd/MM/yyyy HH:mm"); //muutetaan päivämäärä string-muotoon
+                    //string trimmedDate = date.Substring(date.IndexOf(' ') + 1);   //siivotaan päivämäärä pois trimmaamalla kaikki ennen välilyöntiä, tarviiko tätä
+                    //string displayDate = DateTime.Parse(trimmedDate).ToString("dd/MM/yyyy HH:mm"); //muutetaan päivämäärä string-muotoon
                     string price = item["value"].ToString();
-                    //int price2 = int.Parse(price) / 100; //jatka tästä! eli suunnittele paremmin, jos ottaa pois kommentista ei Taskiä ajeta tai se on vain hidas. Pilko parsettava osa erikseen?
+                    //double price2 = int.Parse(price) / 1000; //jatka tästä!
 
                     //tämänhetkinen kellonaika
                     if (date.Contains(today.ToString())) //tähän voi määritellä Datetime-arvoja tai hipsuissa kenoviivoin päivämäärän, tutkittava lisää. 
                     {
                         //Jos tämän lisää ifin ulkopuolelle, antaa koko listan
-                        sb.Append(displayDate + ", hinta: " + price + " €/MWh" + "\n");
+                        sb.Append(DateTime.Parse(date).ToString("HH:mm") + ", hinta: " + price + " €/MWh" + "\n");
                     }
 
                     //kaikki tämän vuodokauden rivit
                         //if (date.Contains("09/14/2022"))
                         if (date.Contains(today.ToShortDateString()))
                         {
-                            string startTime = DateTime.Parse(displayDate).AddHours(1).ToString("HH:mm"); //koska JSON-datassa CET-ajat, lisätään yksi tunti
-                            string endTime = DateTime.Parse(displayDate).AddHours(2).ToString("HH:mm"); //päättymisaika on 1h alkamisajasta
+                            string startTime = DateTime.Parse(date).AddHours(1).ToString("HH:mm"); //koska JSON-datassa CET-ajat, lisätään yksi tunti
+                            string endTime = DateTime.Parse(date).AddHours(2).ToString("HH:mm"); //päättymisaika on 1h alkamisajasta
 
                             sb2.Append("Klo " + startTime + "-" + endTime + ", hinta: " + price + " €/MWh" + "\n");
                         }
