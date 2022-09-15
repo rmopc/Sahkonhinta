@@ -42,53 +42,55 @@ namespace Sähköhinta_App
 
         public async Task GetJsonAsync()
         {
-            var uri = new Uri("https://pakastin.fi/hinnat/prices");
-            //var uri = new Uri("https://api.jsonbin.io/v3/qs/6321dfb4a1610e63862adec3");
-            HttpClient httpClient = new HttpClient();
-            var response = await httpClient.GetAsync(uri);
-
-            if (response.IsSuccessStatusCode)
+            await Task.Run(async () =>
             {
-                statusField.Text = "Onnistui koodilla: " + response;
-                var content = await response.Content.ReadAsStringAsync();
-                string json = content.ToString();
-                var jsonObject = JObject.Parse(json);
-                
-                //var id = jsonObject["_id"]; // onko turha?
-                var prices = jsonObject["prices"];
-                var jsonArray = JArray.Parse(prices.ToString());
+                //var uri = new Uri("https://pakastin.fi/hinnat/prices");
+                var uri = new Uri("https://api.jsonbin.io/v3/qs/6321dfb4a1610e63862adec3");
+                HttpClient httpClient = new HttpClient();
+                var response = await httpClient.GetAsync(uri);
 
-                StringBuilder sb = new StringBuilder();
-                StringBuilder sb2 = new StringBuilder();
-
-                //LISTA OMA CLASS
-                //foreach (var item in jsonArray)
-                //{
-                //    Price p = new Price();
-                //    string date = item["date"].ToString();
-                //    string price = item["value"].ToString();
-                //    p.date = DateTime.Parse(date);
-                //    p.value = int.Parse(price);
-                //    pricelist.Add(p);
-                //}
-
-                //STRINGBUILDER
-                foreach (var item in jsonArray)
+                if (response.IsSuccessStatusCode)
                 {
-                    string date = item["date"].ToString();
-                    string trimmedDate = date.Substring(date.IndexOf(' ') + 1);   //siivotaan päivämäärä pois trimmaamalla kaikki ennen välilyöntiä, tarviiko tätä
-                    string displayDate = DateTime.Parse(trimmedDate).ToString("dd/MM/yyyy HH:mm"); //muutetaan päivämäärä string-muotoon
-                    string price = item["value"].ToString();
-                    //int price2 = int.Parse(price) / 100; //jatka tästä! eli suunnittele paremmin, jos ottaa pois kommentista ei Taskiä ajeta tai se on vain hidas. Pilko parsettava osa erikseen?
+                    statusField.Text = "Onnistui koodilla: " + response;
+                    var content = await response.Content.ReadAsStringAsync();
+                    string json = content.ToString();
+                    var jsonObject = JObject.Parse(json);
 
-                    //tämänhetkinen kellonaika
-                    if (date.Contains(today.ToString())) //tähän voi määritellä Datetime-arvoja tai hipsuissa kenoviivoin päivämäärän, tutkittava lisää. 
+                    //var id = jsonObject["_id"]; // onko turha?
+                    var prices = jsonObject["prices"];
+                    var jsonArray = JArray.Parse(prices.ToString());
+
+                    StringBuilder sb = new StringBuilder();
+                    StringBuilder sb2 = new StringBuilder();
+
+                    //LISTA OMA CLASS
+                    //foreach (var item in jsonArray)
+                    //{
+                    //    Price p = new Price();
+                    //    string date = item["date"].ToString();
+                    //    string price = item["value"].ToString();
+                    //    p.date = DateTime.Parse(date);
+                    //    p.value = int.Parse(price);
+                    //    pricelist.Add(p);
+                    //}
+
+                    //STRINGBUILDER
+                    foreach (var item in jsonArray)
                     {
-                        //Jos tämän lisää ifin ulkopuolelle, antaa koko listan
-                        sb.Append(displayDate + ", hinta: " + price + " €/MWh" + "\n");
-                    }
+                        string date = item["date"].ToString();
+                        string trimmedDate = date.Substring(date.IndexOf(' ') + 1);   //siivotaan päivämäärä pois trimmaamalla kaikki ennen välilyöntiä, tarviiko tätä
+                        string displayDate = DateTime.Parse(trimmedDate).ToString("dd/MM/yyyy HH:mm"); //muutetaan päivämäärä string-muotoon
+                        string price = item["value"].ToString();
+                        //int price2 = int.Parse(price) / 100; //jatka tästä! eli suunnittele paremmin, jos ottaa pois kommentista ei Taskiä ajeta tai se on vain hidas. Pilko parsettava osa erikseen?
 
-                    //kaikki tämän vuodokauden rivit
+                        //tämänhetkinen kellonaika
+                        if (date.Contains(today.ToString())) //tähän voi määritellä Datetime-arvoja tai hipsuissa kenoviivoin päivämäärän, tutkittava lisää. 
+                        {
+                            //Jos tämän lisää ifin ulkopuolelle, antaa koko listan
+                            sb.Append(displayDate + ", hinta: " + price + " €/MWh" + "\n");
+                        }
+
+                        //kaikki tämän vuodokauden rivit
                         //if (date.Contains("09/14/2022"))
                         if (date.Contains(today.ToShortDateString()))
                         {
@@ -97,28 +99,29 @@ namespace Sähköhinta_App
 
                             sb2.Append("Klo " + startTime + "-" + endTime + ", hinta: " + price + " €/MWh" + "\n");
                         }
+                    }
+
+                    //JATKOA OMA CLASS
+                    //var eilen = pricelist.Where(p => p.date == DateTime.Today);
+
+                    //List<Price> eiliset = pricelist.FindAll(p => p.date == DateTime.Today);
+
+                    //priceListView.ItemsSource = eiliset;
+                    //priceFieldToday.Text = eilen.ToString();
+
+
+                    //JATKOA STRINGBUILDER
+                    priceFieldNow.Text = "Hinta nyt: " + "\n" + sb.ToString();
+                    priceFieldToday.Text = "Hinnat tänään: " + "\n" + sb2.ToString();
+                    //testField.Text = "Nyt on: " + DateTime.Now.ToLocalTime().ToString("dd/MM/yyyy HH:mm");
+                    statusField.Text = "Tiedot haettu onnistuneesti";
                 }
-
-                //JATKOA OMA CLASS
-                //var eilen = pricelist.Where(p => p.date == DateTime.Today);
-
-                //List<Price> eiliset = pricelist.FindAll(p => p.date == DateTime.Today);
-
-                //priceListView.ItemsSource = eiliset;
-                //priceFieldToday.Text = eilen.ToString();
-
-
-                //JATKOA STRINGBUILDER
-                priceFieldNow.Text = "Hinta nyt: " + "\n" + sb.ToString();
-                priceFieldToday.Text = "Hinnat tänään: " + "\n" + sb2.ToString();
-                //testField.Text = "Nyt on: " + DateTime.Now.ToLocalTime().ToString("dd/MM/yyyy HH:mm");
-                statusField.Text = "Tiedot haettu onnistuneesti";
-            }
-            else
-            {
-                await DisplayAlert("Virhe!", "Json-data ei ole saatavilla, tai siihen ei saatu yhteyttä", "OK");
-                statusField.Text = "Virhe, ei yhteyttä?";
-            }
+                else
+                {
+                    await DisplayAlert("Virhe!", "Json-data ei ole saatavilla, tai siihen ei saatu yhteyttä", "OK");
+                    statusField.Text = "Virhe, ei yhteyttä?";
+                }
+            });
         }
 
         //private async void checkPrices_Clicked(object sender, EventArgs e)
