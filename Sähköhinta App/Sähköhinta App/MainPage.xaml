@@ -8,9 +8,24 @@
             <Label Text="Sähkön hinta" HorizontalTextAlignment="Center" TextColor="Gray" FontSize="36"/>
         </Frame>
         <Label Text="Sähkön hinta" FontSize="Title" Padding="30,10,30,10" HorizontalTextAlignment="Center" />
-        <Label x:Name="testField" Text="testikenttä" FontSize="16" Padding="30,0,30,0" HorizontalTextAlignment="Center" />
+        <Label x:Name="statusField" Text="tilaa päivitetään..." FontSize="16" Padding="30,0,30,0" HorizontalTextAlignment="Center" />
+        <!--<Button x:Name="checkPrices" Clicked="checkPrices_Clicked" Text="Tarkista hinta"/>-->
         <Label x:Name="priceFieldNow" Text="tietoja haetaan..." FontSize="16" Padding="30,0,30,0" HorizontalTextAlignment="Center" />
         <Label x:Name="priceFieldToday" Text="tietoja haetaan..." FontSize="16" Padding="30,0,30,0" HorizontalTextAlignment="Center" />
+        <ListView x:Name="priceListView" Margin="5" RowHeight="10">
+            <ListView.ItemTemplate>
+                <DataTemplate>
+                    <ViewCell>
+                        <Frame BorderColor="Silver" Padding="3">
+                            <StackLayout Orientation="Horizontal">
+                                <Label Text= "{Binding date} "/>
+                            </StackLayout>
+                        </Frame>
+                    </ViewCell>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+            
+        </ListView>
 
         <Label FontSize="16" Padding="30,24,30,0">
             <Label.FormattedText>
