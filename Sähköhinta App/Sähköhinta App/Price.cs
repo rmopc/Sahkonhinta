@@ -12,8 +12,8 @@ namespace Sähköhinta_App
         public int __v { get; set; }
     }
 
-    //public class Root
-    //{
-    //    public List<Price> prices { get; set; }
-    //}
+    public class Root
+    {
+        public List<Price> prices { get; set; }
+    }
 }
