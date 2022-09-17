@@ -18,9 +18,12 @@ namespace Sähköhinta_App
     public partial class MainPage : ContentPage
     {
 
-        List<Price> pricelist = new List<Price>();  
+        List<Price> pricelist = new List<Price>();
 
-        string sb3 { get; set; }
+        // voiko nää tehdä selkeämmin?
+        StringBuilder sb = new StringBuilder();
+        StringBuilder sb2 = new StringBuilder();
+        StringBuilder sb3 = new StringBuilder();
 
         //DateTime today = DateTime.Today.ToLocalTime(); //Lokaali aikavyöhyke. addhours toimii tässä               
         //DateTime today = DateTime.Today.ToLocalTime().AddHours(15); //Lokaali aikavyöhyke, säädettävä tunteja               
@@ -42,7 +45,7 @@ namespace Sähköhinta_App
         }
 
         //Metodi jossa data luodaan stringbuilderiin
-        async void GetJsonAsync()
+        public async void GetJsonAsync()
         {
             var uri = new Uri("https://pakastin.fi/hinnat/prices");
             //var uri = new Uri("https://api.jsonbin.io/v3/qs/6321dfb4a1610e63862adec3");
@@ -60,9 +63,7 @@ namespace Sähköhinta_App
                 var prices = jsonObject["prices"];
                 var jsonArray = JArray.Parse(prices.ToString());
 
-                StringBuilder sb = new StringBuilder();
-                StringBuilder sb2 = new StringBuilder();
-                StringBuilder sb3 = new StringBuilder();
+
 
                 foreach (var item in jsonArray)
                 {
@@ -91,7 +92,7 @@ namespace Sähköhinta_App
 
                     if (date.Contains(today.AddDays(1).ToShortDateString()))
                     {
-                        pricesTomorrow.IsEnabled = true;
+                        pricesTomorrow.IsVisible = true;
                         string startTime = DateTime.Parse(date).AddHours(1).ToString("HH:mm"); //koska JSON-datassa CET-ajat, lisätään yksi tunti
                         string endTime = DateTime.Parse(date).AddHours(2).ToString("HH:mm"); //päättymisaika on 1h alkamisajasta
 
@@ -101,7 +102,8 @@ namespace Sähköhinta_App
 
                 priceFieldNow.Text = "Hinta nyt: " + "\n" + sb.ToString();
                 priceFieldToday.Text =  sb2.ToString() + "\n" ;
-                statusField.Text = "Tiedot haettu onnistuneesti";
+                //statusField.Text = "Tiedot haettu onnistuneesti";
+                statusField.IsEnabled = false;
             }
             else
             {
@@ -167,10 +169,20 @@ namespace Sähköhinta_App
             }
         }
 
-        private void pricesTomorrow_Clicked( object sender, EventArgs e)
+        private void pricesTomorrow_Clicked(object sender, EventArgs e)
         {
+            pricesToday.IsVisible = true;
+            pricesTomorrow.IsVisible = false;
             priceFieldLabel.Text = "Hinnat huomenna (ALV 0%)";
-            priceFieldToday.Text = sb3.ToString() + "\n";
+            priceFieldToday.Text = sb3.ToString() + "\n"; 
+        }
+
+        private void pricesToday_Clicked(object sender, EventArgs e)
+        {
+            pricesTomorrow.IsVisible = true;
+            pricesToday.IsVisible = false;   
+            priceFieldLabel.Text = "Hinnat tänään (ALV 0%)";
+            priceFieldToday.Text = sb2.ToString() + "\n";
         }
     }
 }
