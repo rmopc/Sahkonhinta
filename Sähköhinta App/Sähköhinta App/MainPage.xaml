@@ -1,51 +1,41 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             x:Class="Sähköhinta_App.MainPage">
+             x:Class="Sähköhinta_App.MainPage" 
+             BackgroundColor="DodgerBlue">
+    <ScrollView>
+        <StackLayout >
+            <Frame BackgroundColor="Azure"  Padding="24" CornerRadius="0">
+                <Label Text="Sähkön hinta" HorizontalTextAlignment="Center" TextColor="Gray" FontSize="40" FontFamily="BebasNeue-Regular"/>
+            </Frame>
+            <Label x:Name="statusField" Text="tilaa päivitetään..." FontSize="16" Padding="30,0,30,0" HorizontalTextAlignment="Center" />
+            <!--<Button x:Name="checkPrices" Clicked="checkPrices_Clicked" Text="Tarkista hinta"/>-->
+            <Label x:Name="priceFieldNow" Text="tietoja haetaan..." FontSize="16" Padding="30,0,30,0" HorizontalTextAlignment="Center" />
 
-    <StackLayout>
-        <Frame BackgroundColor="Azure"  Padding="24" CornerRadius="0">
-            <Label Text="Sähkön hinta" HorizontalTextAlignment="Center" TextColor="Gray" FontSize="40"/>
-        </Frame>
-        <!--<Label Text="Sähkön hinta" FontSize="Title" Padding="30,10,30,10" HorizontalTextAlignment="Center" />-->
-        <Label x:Name="statusField" Text="tilaa päivitetään..." FontSize="16" Padding="30,0,30,0" HorizontalTextAlignment="Center" />
-        <!--<Button x:Name="checkPrices" Clicked="checkPrices_Clicked" Text="Tarkista hinta"/>-->
-        <Label x:Name="priceFieldNow" Text="tietoja haetaan..." FontSize="16" Padding="30,0,30,0" HorizontalTextAlignment="Center" />
+            <Button x:Name="pricesToday" Text="Hinnat tänään" IsVisible="False" Clicked="pricesToday_Clicked"/>
+            <Button x:Name="pricesTomorrow" Text="Hinnat huomenna" IsVisible="False" Clicked="pricesTomorrow_Clicked"/>
 
-        <Button x:Name="pricesToday" Text="Hinnat tänään" IsVisible="False" Clicked="pricesToday_Clicked"/>
-        <Button x:Name="pricesTomorrow" Text="Hinnat huomenna" IsVisible="False" Clicked="pricesTomorrow_Clicked"/>
+            <Label x:Name="priceFieldLabel" Text="Hinnat tänään (ALV 0%)" FontSize="24" HorizontalTextAlignment="Center" FontFamily="BebasNeue-Regular"/>
+            <Label x:Name="priceFieldToday" Text="tietoja haetaan..." FontSize="16" Padding="30,0,30,0" HorizontalTextAlignment="Center" FontFamily="BebasNeue-Regular"/>
         
-        <Label x:Name="priceFieldLabel" Text="Hinnat tänään (ALV 0%)" FontSize="24" HorizontalTextAlignment="Center" />
-        <Label x:Name="priceFieldToday" Text="tietoja haetaan..." FontSize="16" Padding="30,0,30,0" HorizontalTextAlignment="Center" />
-        
-        <!--<Label x:Name="priceFieldTomorrow" Text="tietoja haetaan..." FontSize="16" Padding="30,0,30,0" HorizontalTextAlignment="Center" IsEnabled="False" />-->
+            <!--<Label x:Name="priceFieldTomorrow" Text="tietoja haetaan..." FontSize="16" Padding="30,0,30,0" HorizontalTextAlignment="Center" IsEnabled="False" />-->
 
-        <ListView x:Name="priceListView" Margin="5" RowHeight="30">
-            <ListView.ItemTemplate>
-                <DataTemplate>
-                    <ViewCell>
-                        <Frame BorderColor="Silver" Padding="3">
-                            <StackLayout Orientation="Horizontal">
-                                <Label Text= "{Binding date} " TextColor="Red"/>
-                                <!--<Label Text= "{Binding value} " TextColor="Blue"/>-->
-                            </StackLayout>
-                        </Frame>
-                    </ViewCell>
-                </DataTemplate>
-            </ListView.ItemTemplate>
+            <!--<ListView x:Name="priceListView" Margin="5" RowHeight="30">
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <ViewCell>
+                            <Frame BorderColor="Silver" Padding="3">
+                                <StackLayout Orientation="Horizontal">
+                                    <Label Text= "{Binding date} " TextColor="Red"/>
+                                    --><!--<Label Text= "{Binding value} " TextColor="Blue"/>--><!--
+                                </StackLayout>
+                            </Frame>
+                        </ViewCell>
+                    </DataTemplate>
+                </ListView.ItemTemplate>
             
-        </ListView>
-
-        <Label FontSize="16" Padding="30,24,30,0">
-            <Label.FormattedText>
-                <FormattedString>
-                    <FormattedString.Spans>
-                        <Span Text="Learn more at "/>
-                        <Span Text="https://aka.ms/xamarin-quickstart" FontAttributes="Bold"/>
-                    </FormattedString.Spans>
-                </FormattedString>
-            </Label.FormattedText>
-        </Label>
-    </StackLayout>
+            </ListView>-->
+        </StackLayout>
+     </ScrollView>
 
 </ContentPage>

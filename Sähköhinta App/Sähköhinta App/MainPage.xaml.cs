@@ -28,20 +28,16 @@ namespace Sähköhinta_App
         //DateTime today = DateTime.Today.ToLocalTime(); //Lokaali aikavyöhyke. addhours toimii tässä               
         //DateTime today = DateTime.Today.ToLocalTime().AddHours(15); //Lokaali aikavyöhyke, säädettävä tunteja               
         DateTime today = DateTime.Today;
-        DateTime yesterday = DateTime.Today.ToLocalTime().AddDays(-1);
+        DateTime yesterday = DateTime.Today.AddDays(-1);           
 
-        //String nowTime = today.ToShortDateString();
-
-        DateTime today2 = new DateTime(DateTime.Today.Year, DateTime.Today.Month, DateTime.Today.Day); //tässä toimii nyt kuluva päivä, mutta heti vuorokauden alusta
-        String today3 = DateTime.Now.ToString("MM/dd/yyyy");
-        String dateHour = DateTime.Now.ToString("dd/MM/yyyy HH:mm");     
+        String todayHour = DateTime.Now.ToString("M/d/yyyy h");  
 
         public MainPage()
         {           
             InitializeComponent();
             GetJsonAsync();
             //GetJsonAsyncModel();
-            statusField.Text = "Nyt on: " + today;
+            statusField.IsVisible = false;    
         }
 
         //Metodi jossa data luodaan stringbuilderiin
@@ -74,21 +70,20 @@ namespace Sähköhinta_App
                     double price2 = double.Parse(price) / 10;
 
                     //tämänhetkinen kellonaika
-                    if (date.Contains(today.ToString())) //tähän voi määritellä Datetime-arvoja tai hipsuissa kenoviivoin päivämäärän, tutkittava lisää. 
+                    if (date.ToString().Contains(todayHour))
                     {
-                        //Jos tämän lisää ifin ulkopuolelle, antaa koko listan
-                        sb.Append(DateTime.Parse(date).ToString("HH:mm") + ", hinta: " + price2.ToString("F") + " c/kWh" + "\n");
+                        sb.Append(DateTime.Parse(date).ToString("HH:mm") + ",  " + price2.ToString("F") + " c/kWh" + "\n");
                     }
 
                     //kaikki tämän vuodokauden rivit
-                        //if (date.Contains("09/14/2022"))
-                        if (date.Contains(today.ToShortDateString()))
-                        {
-                            string startTime = DateTime.Parse(date).AddHours(1).ToString("HH:mm"); //koska JSON-datassa CET-ajat, lisätään yksi tunti
-                            string endTime = DateTime.Parse(date).AddHours(2).ToString("HH:mm"); //päättymisaika on 1h alkamisajasta
+                    //if (date.Contains("09/14/2022"))
+                    if (date.Contains(today.ToShortDateString()))
+                    {
+                        string startTime = DateTime.Parse(date).AddHours(1).ToString("HH:mm"); //koska JSON-datassa CET-ajat, lisätään yksi tunti
+                        string endTime = DateTime.Parse(date).AddHours(2).ToString("HH:mm"); //päättymisaika on 1h alkamisajasta
 
-                            sb2.Append("Klo " + startTime + "-" + endTime + ", hinta: " + price2.ToString("F") + " c/kWh" + "\n"); //muutetaan hinta string-muotoon ja pakotetaan 2 desimaalia
-                        }
+                        sb2.Append("Klo " + startTime + "-" + endTime + ", hinta: " + price2.ToString("F") + " c/kWh" + "\n"); //muutetaan hinta string-muotoon ja pakotetaan 2 desimaalia
+                    }
 
                     if (date.Contains(today.AddDays(1).ToShortDateString()))
                     {
@@ -103,11 +98,12 @@ namespace Sähköhinta_App
                 priceFieldNow.Text = "Hinta nyt: " + "\n" + sb.ToString();
                 priceFieldToday.Text =  sb2.ToString() + "\n" ;
                 //statusField.Text = "Tiedot haettu onnistuneesti";
-                statusField.IsEnabled = false;
+                //statusField.IsVisible = false;
             }
             else
             {
                 await DisplayAlert("Virhe!", "Json-data ei ole saatavilla, tai siihen ei saatu yhteyttä", "OK");
+                statusField.IsVisible = true;
                 statusField.Text = "Virhe, ei yhteyttä?";
             }
         }
