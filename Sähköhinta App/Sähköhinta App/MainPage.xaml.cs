@@ -30,7 +30,8 @@ namespace Sähköhinta_App
         DateTime today = DateTime.Today;
         DateTime yesterday = DateTime.Today.AddDays(-1);           
 
-        String todayHour = DateTime.Now.ToString("M/d/yyyy h");  
+        String todayHour = DateTime.Now.ToString("M/d/yyyy h");
+        String todayHour2 = DateTime.Now.ToFormat24h();
 
         public MainPage()
         {           
@@ -53,13 +54,10 @@ namespace Sähköhinta_App
                 //statusField.Text = "Onnistui koodilla: " + response;
                 var content = await response.Content.ReadAsStringAsync();
                 string json = content.ToString();
-                var jsonObject = JObject.Parse(json);
-                
-                //var id = jsonObject["_id"]; // onko turha?
+                var jsonObject = JObject.Parse(json);                
+               
                 var prices = jsonObject["prices"];
                 var jsonArray = JArray.Parse(prices.ToString());
-
-
 
                 foreach (var item in jsonArray)
                 {
@@ -70,13 +68,14 @@ namespace Sähköhinta_App
                     double price2 = double.Parse(price) / 10;
 
                     //tämänhetkinen kellonaika
-                    if (date.ToString().Contains(todayHour))
+                    if (date.ToString().Contains(todayHour2))
                     {
-                        sb.Append(DateTime.Parse(date).ToString("HH:mm") + ",  " + price2.ToString("F") + " c/kWh" + "\n");
+                        //sb.Append(DateTime.Parse(date).ToString("HH:mm") + ",  " + price2.ToString("F") + " c/kWh" + "\n");
+                        sb.Append(todayHour2 + ",  " + price2.ToString("F") + " c/kWh" + "\n");
+                        //sb.Append("Testataan: " + todayHour2);
                     }
 
-                    //kaikki tämän vuodokauden rivit
-                    //if (date.Contains("09/14/2022"))
+                    //kaikki tämän vuodokauden rivit                    
                     if (date.Contains(today.ToShortDateString()))
                     {
                         string startTime = DateTime.Parse(date).AddHours(1).ToString("HH:mm"); //koska JSON-datassa CET-ajat, lisätään yksi tunti
@@ -179,6 +178,16 @@ namespace Sähköhinta_App
             pricesToday.IsVisible = false;   
             priceFieldLabel.Text = "Hinnat tänään (ALV 0%)";
             priceFieldToday.Text = sb2.ToString() + "\n";
+        }
+
+        private void reloadButton_Clicked(object sender, EventArgs e)
+        {
+            priceFieldNow.Text = "Päivitetään...";
+            priceFieldToday.Text = "";
+            sb.Clear();
+            sb2.Clear();
+            sb3.Clear();
+            GetJsonAsync();
         }
     }
 }

@@ -8,7 +8,7 @@ namespace Sähköhinta_App
     {
         public static string ToFormat24h(this DateTime dt)
         {
-            return dt.ToString("M/d/yyyy HH");
+            return dt.ToString("M/d/yyyy H:00"); //tässä muodossa toimii nyt niin että antaa vain yhdelle tunnille hinnan, testattu aamupäivästä klo 10
         }
     }
 }

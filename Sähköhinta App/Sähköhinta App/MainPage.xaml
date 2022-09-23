@@ -9,7 +9,7 @@
                 <Label Text="Sähkön hinta" HorizontalTextAlignment="Center" TextColor="Gray" FontSize="40" FontFamily="BebasNeue-Regular"/>
             </Frame>
             <Label x:Name="statusField" Text="tilaa päivitetään..." FontSize="16" Padding="30,0,30,0" HorizontalTextAlignment="Center" />
-            <!--<Button x:Name="checkPrices" Clicked="checkPrices_Clicked" Text="Tarkista hinta"/>-->
+            
             <Label x:Name="priceFieldNow" Text="tietoja haetaan..." FontSize="16" Padding="30,0,30,0" HorizontalTextAlignment="Center" />
 
             <Button x:Name="pricesToday" Text="Hinnat tänään" IsVisible="False" Clicked="pricesToday_Clicked"/>
@@ -17,7 +17,8 @@
 
             <Label x:Name="priceFieldLabel" Text="Hinnat tänään (ALV 0%)" FontSize="24" HorizontalTextAlignment="Center" FontFamily="BebasNeue-Regular"/>
             <Label x:Name="priceFieldToday" Text="tietoja haetaan..." FontSize="16" Padding="30,0,30,0" HorizontalTextAlignment="Center" FontFamily="BebasNeue-Regular"/>
-        
+
+            <Button x:Name="reloadButton" Text="Päivitä näkymä" Clicked="reloadButton_Clicked"/>
             <!--<Label x:Name="priceFieldTomorrow" Text="tietoja haetaan..." FontSize="16" Padding="30,0,30,0" HorizontalTextAlignment="Center" IsEnabled="False" />-->
 
             <!--<ListView x:Name="priceListView" Margin="5" RowHeight="30">
