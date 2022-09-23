@@ -15,9 +15,8 @@ namespace Sähköhinta_App
 {
 
     
-    public partial class MainPage : ContentPage
+    public partial class MainPage :TabbedPage
     {
-
         List<Price> pricelist = new List<Price>();
 
         // voiko nää tehdä selkeämmin?
@@ -30,7 +29,8 @@ namespace Sähköhinta_App
         DateTime today = DateTime.Today;
         DateTime yesterday = DateTime.Today.AddDays(-1);           
 
-        String todayHour = DateTime.Now.ToString("M/d/yyyy h");
+        String todayHour = DateTime.Now.ToString("M/d/yyyy HH");
+        String todayHourCorrected = DateTime.Now.AddHours(3).ToString("M/d/yyyy HH");
         String todayHour2 = DateTime.Now.ToFormat24h();
 
         public MainPage()
@@ -38,7 +38,7 @@ namespace Sähköhinta_App
             InitializeComponent();
             GetJsonAsync();
             //GetJsonAsyncModel();
-            statusField.IsVisible = false;    
+            statusField.IsVisible = false;
         }
 
         //Metodi jossa data luodaan stringbuilderiin
@@ -54,42 +54,48 @@ namespace Sähköhinta_App
                 //statusField.Text = "Onnistui koodilla: " + response;
                 var content = await response.Content.ReadAsStringAsync();
                 string json = content.ToString();
-                var jsonObject = JObject.Parse(json);                
+                var jsonObject = JObject.Parse(json);
                
                 var prices = jsonObject["prices"];
-                var jsonArray = JArray.Parse(prices.ToString());
+                var jsonArray = JArray.Parse(prices.ToString());               
 
                 foreach (var item in jsonArray)
                 {
-                    string date = item["date"].ToString();
-                    //string trimmedDate = date.Substring(date.IndexOf(' ') + 1);   //siivotaan päivämäärä pois trimmaamalla kaikki ennen välilyöntiä, tarviiko tätä
-                    //string displayDate = DateTime.Parse(trimmedDate).ToString("dd/MM/yyyy HH:mm"); //muutetaan päivämäärä string-muotoon
+                    string date = item["date"].ToString();                    
+                    string displayDate = DateTime.Parse(date).ToString("M/d/yyyy HH"); //muutetaan päivämäärä toiseen, yhtenäisempään string-muotoon
                     string price = item["value"].ToString();
                     double price2 = double.Parse(price) / 10;
 
-                    //tämänhetkinen kellonaika
-                    if (date.ToString().Contains(todayHour2))
+                    if (taxSwitch.IsToggled)
                     {
-                        //sb.Append(DateTime.Parse(date).ToString("HH:mm") + ",  " + price2.ToString("F") + " c/kWh" + "\n");
-                        sb.Append(todayHour2 + ",  " + price2.ToString("F") + " c/kWh" + "\n");
+                        price2 = price2 * 1.24;
+                    }
+
+                        //tämänhetkinen kellonaika
+                        if (displayDate.ToString().Contains(todayHour))
+                    {
+                        sb.Append("Klo " + DateTime.Parse(date).ToString("HH:mm") + " -  " + price2.ToString("F") + " c/kWh" + "\n");
+                        //sb.Append(todayHourCorrected + " " + price2.ToString("F") + " c/kWh" + "\n");
                         //sb.Append("Testataan: " + todayHour2);
+                        //sb.Append(DateTime.Parse(date).ToString());
                     }
 
                     //kaikki tämän vuodokauden rivit                    
                     if (date.Contains(today.ToShortDateString()))
                     {
-                        string startTime = DateTime.Parse(date).AddHours(1).ToString("HH:mm"); //koska JSON-datassa CET-ajat, lisätään yksi tunti
-                        string endTime = DateTime.Parse(date).AddHours(2).ToString("HH:mm"); //päättymisaika on 1h alkamisajasta
+                        string startTime = DateTime.Parse(date).AddHours(3).ToString("HH:mm"); //koska JSON-datassa CET-ajat, lisätään tunteja
+                        string endTime = DateTime.Parse(date).AddHours(4).ToString("HH:mm"); //päättymisaika on 1h alkamisajasta
 
                         sb2.Append("Klo " + startTime + "-" + endTime + ", hinta: " + price2.ToString("F") + " c/kWh" + "\n"); //muutetaan hinta string-muotoon ja pakotetaan 2 desimaalia
+                        //sb2.Append(date + " " +  price2.ToString("F") + " c/kWh" + "\n");
                     }
 
                     if (date.Contains(today.AddDays(1).ToShortDateString()))
                     {
                         pricesTomorrow.IsVisible = true;
                         string startTime = DateTime.Parse(date).AddHours(1).ToString("HH:mm"); //koska JSON-datassa CET-ajat, lisätään yksi tunti
-                        string endTime = DateTime.Parse(date).AddHours(2).ToString("HH:mm"); //päättymisaika on 1h alkamisajasta
-
+                        string endTime = DateTime.Parse(date).AddHours(2).ToString("HH:mm"); //päättymisaika on 1h alkamisajasta                        
+                        
                         sb3.Append("Klo " + startTime + "-" + endTime + ", hinta: " + price2.ToString("F") + " c/kWh" + "\n"); //muutetaan hinta string-muotoon ja pakotetaan 2 desimaalia                        
                     }
                 }
@@ -168,15 +174,30 @@ namespace Sähköhinta_App
         {
             pricesToday.IsVisible = true;
             pricesTomorrow.IsVisible = false;
-            priceFieldLabel.Text = "Hinnat huomenna (ALV 0%)";
+            if (taxSwitch.IsToggled)
+            {
+                priceFieldLabel.Text = "Hinnat huomenna (ALV 24%)";
+            }
+            else
+            {
+                priceFieldLabel.Text = "Hinnat huomenna (ALV 0%)";
+            }
             priceFieldToday.Text = sb3.ToString() + "\n"; 
         }
 
         private void pricesToday_Clicked(object sender, EventArgs e)
         {
             pricesTomorrow.IsVisible = true;
-            pricesToday.IsVisible = false;   
-            priceFieldLabel.Text = "Hinnat tänään (ALV 0%)";
+            pricesToday.IsVisible = false;
+            if (taxSwitch.IsToggled)
+
+            {
+                priceFieldLabel.Text = "Hinnat tänään (ALV 24%)";
+            }
+            else
+            {
+                priceFieldLabel.Text = "Hinnat tänään (ALV 0%)";
+            }
             priceFieldToday.Text = sb2.ToString() + "\n";
         }
 

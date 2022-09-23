@@ -1,8 +1,14 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
-<ContentPage xmlns="http://xamarin.com/schemas/2014/forms"
+<TabbedPage xmlns="http://xamarin.com/schemas/2014/forms"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="Sähköhinta_App.MainPage" 
+             xmlns:android="clr-namespace:Xamarin.Forms.PlatformConfiguration.AndroidSpecific;assembly=Xamarin.Forms.Core"
+             android:TabbedPage.ToolbarPlacement="Bottom"
+             BarBackgroundColor="Black" BarTextColor="White"
+             SelectedTabColor="Gray"
+             UnselectedTabColor="Red"
              BackgroundColor="DodgerBlue">
+    <ContentPage Title="Prices">
     <ScrollView>
         <StackLayout >
             <Frame BackgroundColor="Azure"  Padding="24" CornerRadius="0">
@@ -38,5 +44,16 @@
             </ListView>-->
         </StackLayout>
      </ScrollView>
+    </ContentPage>
 
-</ContentPage>
+    <ContentPage Title="Settings" BackgroundColor="DodgerBlue">
+        <StackLayout>
+            <Frame BackgroundColor="Azure"  Padding="24" CornerRadius="0">
+                <Label Text="Testailua" HorizontalTextAlignment="Center" TextColor="Gray" FontSize="40" FontFamily="BebasNeue-Regular"/>
+            </Frame>
+            <Label Text="Lisää hintoihin ALV?"/>
+            <Switch x:Name="taxSwitch" IsToggled="False"/>
+            <Button x:Name="settingsReloadButton" Text="Päivitä näkymä" Clicked="reloadButton_Clicked"/>
+        </StackLayout>
+    </ContentPage>
+</TabbedPage>
