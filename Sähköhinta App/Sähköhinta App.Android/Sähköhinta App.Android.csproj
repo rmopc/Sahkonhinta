@@ -70,7 +70,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Assets\BebasNeue-Regular.ttf" />
+    <EmbeddedResource Include="Assets\BebasNeueRegular.ttf" />
+    <EmbeddedResource Include="Assets\Joynoted Demo.ttf" />
+    <EmbeddedResource Include="Assets\VELLINE.ttf" />
+    <EmbeddedResource Include="Assets\IndieFlower-Regular.ttf" />
     <None Include="Resources\AboutResources.txt" />
     <None Include="Assets\AboutAssets.txt" />
     <None Include="Properties\AndroidManifest.xml" />

@@ -12,7 +12,7 @@
     <ScrollView>
         <StackLayout >
             <Frame BackgroundColor="Azure"  Padding="24" CornerRadius="0">
-                <Label Text="Sähkön hinta" HorizontalTextAlignment="Center" TextColor="Gray" FontSize="40" FontFamily="BebasNeue-Regular"/>
+                <Label Text="Sähkön hinta" HorizontalTextAlignment="Center" TextColor="Gray" FontSize="40"/>
             </Frame>
             <Label x:Name="statusField" Text="tilaa päivitetään..." FontSize="16" Padding="30,0,30,0" HorizontalTextAlignment="Center" />
             
@@ -21,27 +21,21 @@
             <Button x:Name="pricesToday" Text="Hinnat tänään" IsVisible="False" Clicked="pricesToday_Clicked"/>
             <Button x:Name="pricesTomorrow" Text="Hinnat huomenna" IsVisible="False" Clicked="pricesTomorrow_Clicked"/>
 
-            <Label x:Name="priceFieldLabel" Text="Hinnat tänään (ALV 0%)" FontSize="24" HorizontalTextAlignment="Center" FontFamily="BebasNeue-Regular"/>
-            <Label x:Name="priceFieldToday" Text="tietoja haetaan..." FontSize="16" Padding="30,0,30,0" HorizontalTextAlignment="Center" FontFamily="BebasNeue-Regular"/>
+            <Label x:Name="priceFieldLabel" Text="Hinnat tänään (ALV 0%)" FontSize="24" HorizontalTextAlignment="Center"/>
+            <Label x:Name="priceFieldToday" Text="tietoja haetaan..." FontSize="16" Padding="30,0,30,0" HorizontalTextAlignment="Center"/>
 
             <Button x:Name="reloadButton" Text="Päivitä näkymä" Clicked="reloadButton_Clicked"/>
             <!--<Label x:Name="priceFieldTomorrow" Text="tietoja haetaan..." FontSize="16" Padding="30,0,30,0" HorizontalTextAlignment="Center" IsEnabled="False" />-->
 
-            <!--<ListView x:Name="priceListView" Margin="5" RowHeight="30">
-                <ListView.ItemTemplate>
-                    <DataTemplate>
-                        <ViewCell>
-                            <Frame BorderColor="Silver" Padding="3">
-                                <StackLayout Orientation="Horizontal">
-                                    <Label Text= "{Binding date} " TextColor="Red"/>
-                                    --><!--<Label Text= "{Binding value} " TextColor="Blue"/>--><!--
-                                </StackLayout>
-                            </Frame>
-                        </ViewCell>
-                    </DataTemplate>
-                </ListView.ItemTemplate>
+            <ListView x:Name="priceListView" Margin="5" RowHeight="30">
+                    <ListView.ItemTemplate>
+                        <DataTemplate>
+                            <TextCell Text="{Binding date}" Detail="{Binding price}"/>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+
+            </ListView>
             
-            </ListView>-->
         </StackLayout>
      </ScrollView>
     </ContentPage>
@@ -49,7 +43,7 @@
     <ContentPage Title="Settings" BackgroundColor="DodgerBlue">
         <StackLayout>
             <Frame BackgroundColor="Azure"  Padding="24" CornerRadius="0">
-                <Label Text="Testailua" HorizontalTextAlignment="Center" TextColor="Gray" FontSize="40" FontFamily="BebasNeue-Regular"/>
+                <Label Text="Testailua" HorizontalTextAlignment="Center" TextColor="Gray" FontSize="40"/>
             </Frame>
             <Label Text="Lisää hintoihin ALV?"/>
             <Switch x:Name="taxSwitch" IsToggled="False"/>

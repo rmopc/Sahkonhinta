@@ -19,6 +19,11 @@ namespace Sähköhinta_App
     {
         List<Price> pricelist = new List<Price>();
 
+        List<string> pricelistName = new List<string>
+        {
+            "testi", "pesti", "lesti", "kesti"
+        };
+
         // voiko nää tehdä selkeämmin?
         StringBuilder sb = new StringBuilder();
         StringBuilder sb2 = new StringBuilder();
@@ -36,9 +41,10 @@ namespace Sähköhinta_App
         public MainPage()
         {           
             InitializeComponent();
-            GetJsonAsync();
-            //GetJsonAsyncModel();
+            //GetJsonAsync();
+            GetJsonAsyncModel();
             statusField.IsVisible = false;
+            //Console.WriteLine(pricelistName); //tämä listan testausta varten
         }
 
         //Metodi jossa data luodaan stringbuilderiin
@@ -55,13 +61,13 @@ namespace Sähköhinta_App
                 var content = await response.Content.ReadAsStringAsync();
                 string json = content.ToString();
                 var jsonObject = JObject.Parse(json);
-               
+
                 var prices = jsonObject["prices"];
-                var jsonArray = JArray.Parse(prices.ToString());               
+                var jsonArray = JArray.Parse(prices.ToString());
 
                 foreach (var item in jsonArray)
                 {
-                    string date = item["date"].ToString();                    
+                    string date = item["date"].ToString();
                     string displayDate = DateTime.Parse(date).ToString("M/d/yyyy HH"); //muutetaan päivämäärä toiseen, yhtenäisempään string-muotoon
                     string price = item["value"].ToString();
                     double price2 = double.Parse(price) / 10;
@@ -71,8 +77,8 @@ namespace Sähköhinta_App
                         price2 = price2 * 1.24;
                     }
 
-                        //tämänhetkinen kellonaika
-                        if (displayDate.ToString().Contains(todayHour))
+                    //tämänhetkinen kellonaika
+                    if (displayDate.ToString().Contains(todayHour))
                     {
                         sb.Append("Klo " + DateTime.Parse(date).ToString("HH:mm") + " -  " + price2.ToString("F") + " c/kWh" + "\n");
                         //sb.Append(todayHourCorrected + " " + price2.ToString("F") + " c/kWh" + "\n");
@@ -95,13 +101,13 @@ namespace Sähköhinta_App
                         pricesTomorrow.IsVisible = true;
                         string startTime = DateTime.Parse(date).AddHours(1).ToString("HH:mm"); //koska JSON-datassa CET-ajat, lisätään yksi tunti
                         string endTime = DateTime.Parse(date).AddHours(2).ToString("HH:mm"); //päättymisaika on 1h alkamisajasta                        
-                        
+
                         sb3.Append("Klo " + startTime + "-" + endTime + ", hinta: " + price2.ToString("F") + " c/kWh" + "\n"); //muutetaan hinta string-muotoon ja pakotetaan 2 desimaalia                        
                     }
                 }
 
                 priceFieldNow.Text = "Hinta nyt: " + "\n" + sb.ToString();
-                priceFieldToday.Text =  sb2.ToString() + "\n" ;
+                priceFieldToday.Text = sb2.ToString() + "\n";
                 //statusField.Text = "Tiedot haettu onnistuneesti";
                 //statusField.IsVisible = false;
             }
@@ -116,18 +122,27 @@ namespace Sähköhinta_App
         //Metodi jossa data haetaan omaan modeliin
         async void GetJsonAsyncModel()
         {
-            var uri = new Uri("https://pakastin.fi/hinnat/prices");
-            //var uri = new Uri("https://api.jsonbin.io/v3/qs/632432bfa1610e63862d34d7");
+            var uri = new Uri("https://pakastin.fi/hinnat/prices");            
             HttpClient httpClient = new HttpClient();
             var response = await httpClient.GetAsync(uri);
 
             if (response.IsSuccessStatusCode)
             {
                 //statusField.Text = "Onnistui koodilla: " + response;
-                var content = await response.Content.ReadAsStringAsync();
-                string json = content.ToString();
+                var content = await response.Content.ReadAsStringAsync(); // kokeile Simon getstringasync
+                string json = content.ToString();                
                 var jsonObject = JObject.Parse(json);
-                
+
+                //Deserialisoinnin testailua
+                //var data = JsonConvert.DeserializeObject<Price>(json);
+                //if (data.ToString().Contains("2022"))
+                //{
+                //    priceFieldToday.Text = data.ToString();
+                //}
+
+                //IList testi
+                //var templist = jsonObject["prices"].ToObject<IList<Price>>();            
+
                 var prices = jsonObject["prices"];
                 var jsonArray = JArray.Parse(prices.ToString());
 
@@ -144,24 +159,23 @@ namespace Sähköhinta_App
                 }
 
                 //LINQ-kysely
-                var eilen = pricelist.Where(p => p.date.ToString().Contains(today.ToShortDateString()));
-                foreach (var dailyprice in eilen)
+                var today = pricelist.Where(p => p.date.ToString().Contains(todayHour));
+                foreach (var dailyprice in today)
                 {
-                    //priceListView.ItemsSource = dailyprice.ToString();
-                    priceFieldToday.Text = dailyprice.ToString();
+                    priceListView.ItemsSource = dailyprice.ToString();
+                    priceFieldToday.Text = pricelist.ToString();
                 }
 
                 //Find
-                //List<Price> eiliset = pricelist.FindAll(p => p.date.ToString().Contains(DateTime.Today.ToString()));
-                //foreach (var dailyprice in eiliset)
+                //List<Price> tänään = pricelist.FindAll(p => p.date.ToString().Contains(today.ToString()));
+                //foreach (var dailyprice in tänään)
                 //{
-                //    //priceListView.ItemsSource = dailyprice.ToString();
-                //    //priceFieldToday.Text = dailyprice.ToString(); // palauttaa app nimen ja listan nimen? tutkittava
+                //    priceListView.ItemsSource = tänään.ToString();
+                //    priceFieldToday.Text = dailyprice.ToString(); // palauttaa app nimen ja listan nimen? tutkittava
                 //}
-                //priceListView.ItemsSource = eilen.ToString();
-                //priceFieldToday.Text = eiliset.ToString();
+                //priceFieldToday.Text = tänään.ToString();
 
-                statusField.Text = "Tiedot haettu onnistuneesti";
+                //statusField.Text = "Tiedot haettu onnistuneesti";
             }
             else
             {
@@ -209,6 +223,7 @@ namespace Sähköhinta_App
             sb2.Clear();
             sb3.Clear();
             GetJsonAsync();
+            //GetJsonAsyncModel();
         }
     }
 }
