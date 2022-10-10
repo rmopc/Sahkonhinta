@@ -27,13 +27,12 @@
             <Button x:Name="reloadButton" Text="Päivitä näkymä" Clicked="reloadButton_Clicked"/>
             <!--<Label x:Name="priceFieldTomorrow" Text="tietoja haetaan..." FontSize="16" Padding="30,0,30,0" HorizontalTextAlignment="Center" IsEnabled="False" />-->
 
-            <ListView x:Name="priceListView" Margin="5" RowHeight="30">
+            <ListView x:Name="priceListView" Margin="5" RowHeight="50">
                     <ListView.ItemTemplate>
                         <DataTemplate>
-                            <TextCell Text="{Binding date}" Detail="{Binding price}"/>
+                            <TextCell Text="{Binding date}" Detail="{Binding value}"/>
                         </DataTemplate>
                     </ListView.ItemTemplate>
-
             </ListView>
             
         </StackLayout>

@@ -10,20 +10,15 @@ using System.Net;
 using System.Net.Http;
 using Newtonsoft.Json.Linq;
 using System.Diagnostics;
+using System.Collections.ObjectModel;
+using System.Reflection;
 
 namespace Sähköhinta_App
 {
 
     
     public partial class MainPage :TabbedPage
-    {
-        List<Price> pricelist = new List<Price>();
-
-        List<string> pricelistName = new List<string>
-        {
-            "testi", "pesti", "lesti", "kesti"
-        };
-
+    {        
         // voiko nää tehdä selkeämmin?
         StringBuilder sb = new StringBuilder();
         StringBuilder sb2 = new StringBuilder();
@@ -37,13 +32,14 @@ namespace Sähköhinta_App
         String todayHour = DateTime.Now.ToString("M/d/yyyy HH");
         String todayHourCorrected = DateTime.Now.AddHours(3).ToString("M/d/yyyy HH");
         String todayHour2 = DateTime.Now.ToFormat24h();
-
+        
         public MainPage()
         {           
             InitializeComponent();
             //GetJsonAsync();
-            GetJsonAsyncModel();
-            statusField.IsVisible = false;
+            //GetJsonAsyncModel();
+            GetJsonAsyncOC();
+            //statusField.IsVisible = false;
             //Console.WriteLine(pricelistName); //tämä listan testausta varten
         }
 
@@ -120,68 +116,142 @@ namespace Sähköhinta_App
         }
 
         //Metodi jossa data haetaan omaan modeliin
-        async void GetJsonAsyncModel()
+        //async void GetJsonAsyncModel()
+        //{
+        //    var uri = new Uri("https://pakastin.fi/hinnat/prices");            
+        //    HttpClient httpClient = new HttpClient();
+        //    var response = await httpClient.GetAsync(uri);
+
+        //    if (response.IsSuccessStatusCode)
+        //    {
+        //        //statusField.Text = "Onnistui koodilla: " + response;
+        //        var content = await response.Content.ReadAsStringAsync(); // kokeile Simon getstringasync
+        //        string json = content.ToString();                
+        //        var jsonObject = JObject.Parse(json);
+
+        //        //Deserialisoinnin testailua
+        //        //var data = JsonConvert.DeserializeObject<Price>(json);
+        //        //if (data.ToString().Contains("2022"))
+        //        //{
+        //        //    priceFieldToday.Text = data.ToString();
+        //        //}
+
+        //        //IList testi
+        //        //var templist = jsonObject["prices"].ToObject<IList<Price>>();            
+
+        //        var prices = jsonObject["prices"];
+        //        var jsonArray = JArray.Parse(prices.ToString());
+
+        //        foreach (var item in jsonArray)
+        //        {
+        //            Price p = new Price();
+        //            string date = item["date"].ToString();
+        //            string price = item["value"].ToString();
+        //            //string trimmedDate = date.Substring(date.IndexOf(' ') + 1);
+        //            //string displayDate = DateTime.Parse(trimmedDate).ToString("dd/MM/yyyy HH:mm"); //muutetaan päivämäärä string-muotoon
+        //            p.date = DateTime.Parse(date);
+        //            p.value = double.Parse(price); // tähän tyssää jos int, "Input string was not in a correct format"
+        //            pricelist.Add(p);
+        //        }
+
+        //        //LINQ-kysely
+        //        var today = pricelist.Where(p => p.date.ToString().Contains(todayHour));
+        //        foreach (var dailyprice in today)
+        //        {
+        //            priceListView.ItemsSource = dailyprice.ToString();
+        //            priceFieldToday.Text = pricelist.ToString();
+        //        }
+
+        //        //Find
+        //        //List<Price> tänään = pricelist.FindAll(p => p.date.ToString().Contains(today.ToString()));
+        //        //foreach (var dailyprice in tänään)
+        //        //{
+        //        //    priceListView.ItemsSource = tänään.ToString();
+        //        //    priceFieldToday.Text = dailyprice.ToString(); // palauttaa app nimen ja listan nimen? tutkittava
+        //        //}
+        //        //priceFieldToday.Text = tänään.ToString();
+
+        //        //statusField.Text = "Tiedot haettu onnistuneesti";
+        //    }
+        //    else
+        //    {
+        //        await DisplayAlert("Virhe!", "Json-data ei ole saatavilla, tai siihen ei saatu yhteyttä", "OK");
+        //        statusField.Text = "Virhe, ei yhteyttä?";
+        //    }
+        //}
+
+        async void GetJsonAsyncOC()
         {
-            var uri = new Uri("https://pakastin.fi/hinnat/prices");            
             HttpClient httpClient = new HttpClient();
-            var response = await httpClient.GetAsync(uri);
+            
+            var uri = new Uri("https://pakastin.fi/hinnat/prices");            
+            string json = await httpClient.GetStringAsync(uri);
 
-            if (response.IsSuccessStatusCode)
+            var jsonObject = JObject.Parse(json);
+            var prices = jsonObject["prices"];
+            var jsonArray = JArray.Parse(prices.ToString());
+
+            //siirrä päivämäärät ylös?
+            DateTime startDateTime = DateTime.Today; //Today at 00:00:00
+            DateTime endDateTime = DateTime.Today.AddDays(1).AddTicks(-1); //Today at 23:59:59
+
+            List<Price> prixe = JsonConvert.DeserializeObject<List<Price>>(jsonArray.ToString());
+            ObservableCollection<Price> dataa = new ObservableCollection<Price>(prixe);
+
+            //prixe = prixe.OrderBy(x => x.value).ToList(); //tutki tätä jos haluaa järjestää listaa ennenkuin näyttää sen
+            //prixe = prixe.Where(x => x.date.Month == DateTime.Today.Month).ToList(); //tutki tätä lisää!
+            //prixe = prixe.Where(x => x.date.Month == 9).ToList(); // tietty kuukausi
+            //prixe = prixe.Where(x => x.date.ToString() == DateTime.Now.ToString("M/d/yyyy HH")).ToList();
+            prixe = prixe.Where(x => x.date >=startDateTime && x.date<= endDateTime).ToList(); //TÄLLÄ TOIMII NYT KOKO KULUVAN VUOROKAUDEN TUNNIT
+
+            //Console.WriteLine("TIPPING TIME " + prixe);
+
+            //double uselessTotal = prixe.Sum(x => x.value);
+            //Console.WriteLine($"The total number of paid kilowatts is {uselessTotal}");
+
+            //double monthlyAvg = 0;
+            //monthlyAvg = prixe.Where(x => x.date.Month == DateTime.Today.Month).Average(x => x.value);
+            //Console.WriteLine($"This month's average is: {monthlyAvg}");
+
+            //double dailyAvg = 0;
+            //dailyAvg = prixe.Where(x => x.date.Day == DateTime.Today.Day).Average(x => x.value);
+            //Console.WriteLine($"Today's average is: {dailyAvg}");
+
+            //TÄMÄ TÄMÄ TÄMÄ
+            //TÄLLÄ SAA LISTATTUA AINAKIN KONSOLIIN MITÄ HALUAA MODAA TÄTÄ JA TÄN ALTA KAIKKI FUCK YEAH
+            foreach (var price in prixe)
             {
-                //statusField.Text = "Onnistui koodilla: " + response;
-                var content = await response.Content.ReadAsStringAsync(); // kokeile Simon getstringasync
-                string json = content.ToString();                
-                var jsonObject = JObject.Parse(json);
+                string date = price.date.ToString("M/d/yyyy HH"); //muutetaan päivämäärä toiseen, yhtenäisempään string-muotoon
+                Double value = price.value;
 
-                //Deserialisoinnin testailua
-                //var data = JsonConvert.DeserializeObject<Price>(json);
-                //if (data.ToString().Contains("2022"))
-                //{
-                //    priceFieldToday.Text = data.ToString();
-                //}
-
-                //IList testi
-                //var templist = jsonObject["prices"].ToObject<IList<Price>>();            
-
-                var prices = jsonObject["prices"];
-                var jsonArray = JArray.Parse(prices.ToString());
-
-                foreach (var item in jsonArray)
-                {
-                    Price p = new Price();
-                    string date = item["date"].ToString();
-                    string price = item["value"].ToString();
-                    //string trimmedDate = date.Substring(date.IndexOf(' ') + 1);
-                    //string displayDate = DateTime.Parse(trimmedDate).ToString("dd/MM/yyyy HH:mm"); //muutetaan päivämäärä string-muotoon
-                    p.date = DateTime.Parse(date);
-                    p.value = double.Parse(price); // tähän tyssää jos int, "Input string was not in a correct format"
-                    pricelist.Add(p);
-                }
-
-                //LINQ-kysely
-                var today = pricelist.Where(p => p.date.ToString().Contains(todayHour));
-                foreach (var dailyprice in today)
-                {
-                    priceListView.ItemsSource = dailyprice.ToString();
-                    priceFieldToday.Text = pricelist.ToString();
-                }
-
-                //Find
-                //List<Price> tänään = pricelist.FindAll(p => p.date.ToString().Contains(today.ToString()));
-                //foreach (var dailyprice in tänään)
-                //{
-                //    priceListView.ItemsSource = tänään.ToString();
-                //    priceFieldToday.Text = dailyprice.ToString(); // palauttaa app nimen ja listan nimen? tutkittava
-                //}
-                //priceFieldToday.Text = tänään.ToString();
-
-                //statusField.Text = "Tiedot haettu onnistuneesti";
+                Console.WriteLine(date + " " + value);
+                priceFieldToday.Text = date + " " + value + "\n"; //tämä antaa kuitenkin vain vikan arvon?
+                priceListView.ItemsSource = dataa.Where(x => x.date >= startDateTime && x.date <= endDateTime); //antaa nyt listalle koko vuorokauden tunnit :)
             }
-            else
-            {
-                await DisplayAlert("Virhe!", "Json-data ei ole saatavilla, tai siihen ei saatu yhteyttä", "OK");
-                statusField.Text = "Virhe, ei yhteyttä?";
-            }
+
+            //VANHEMPAA TESTAILUA, pidetään toistaiseksi tallessa
+            //JObject price = JObject.Parse(json); //TÄSTÄ OTA TÄSTÄ OTA TÄSTÄ OTA TÄSTÄ OTA TÄSTÄ OTA TÄSTÄ OTA TÄSTÄ OTA TÄSTÄ OTA TÄSTÄ OTA TÄSTÄ OTA 
+            //List <JToken> tokens = price.Children().ToList()
+            //Console.WriteLine(price.ToString()); //tämä toimii nyt, eli listaa kaikki!
+
+            //var plöö = price["prices"][0]; //tällä antaa ekan ilmentymän
+            //Console.WriteLine(plöö);
+
+            //var blaa = price["prices"]; // tällä antaa myös kaikki ilmentymät
+            //Console.WriteLine(blaa);
+
+            //foreach(var item in blaa)
+            //{
+            //    DateTime date = (DateTime)item["date"];
+            //    string displayDate = date.ToString("M/d/yyyy HH"); //muutetaan päivämäärä toiseen, yhtenäisempään string-muotoon
+            //    double prices = (double)item["value"]; // tähän double ja tsek desimaalit
+
+            //    if (displayDate.ToString().Contains(today.ToShortDateString()))
+            //    {
+            //        Console.WriteLine(displayDate.ToString() + " " +  prices);
+            //        priceListView.ItemsSource = displayDate.ToString() + " " + prices; //tulostaa kirjaimen per rivi ja vain viimeisimmän esiintymän?
+            //    }
+            //}           
         }
 
         private void pricesTomorrow_Clicked(object sender, EventArgs e)
@@ -226,4 +296,6 @@ namespace Sähköhinta_App
             //GetJsonAsyncModel();
         }
     }
+
+
 }
