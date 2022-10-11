@@ -15,173 +15,22 @@ using System.Reflection;
 
 namespace Sähköhinta_App
 {
-
-
     public partial class MainPage : TabbedPage
     {
-        // voiko nää tehdä selkeämmin?
         StringBuilder sb = new StringBuilder();
-        StringBuilder sb2 = new StringBuilder();
-        StringBuilder sb3 = new StringBuilder();
-
-        //DateTime today = DateTime.Today.ToLocalTime(); //Lokaali aikavyöhyke. addhours toimii tässä               
-        //DateTime today = DateTime.Today.ToLocalTime().AddHours(15); //Lokaali aikavyöhyke, säädettävä tunteja               
+       
         DateTime today = DateTime.Today;
         DateTime yesterday = DateTime.Today.AddDays(-1);           
 
-        String todayHour = DateTime.Now.ToString("M/d/yyyy HH");
-        String todayHourCorrected = DateTime.Now.AddHours(3).ToString("M/d/yyyy HH");
-        String todayHour2 = DateTime.Now.ToFormat24h();
-
-
-        
+        String todayHour = DateTime.Now.AddHours(-4).ToString("M/d/yyyy HH"); //muunnetaan CET-ajasta Suomen aikaan
+                
         public MainPage()
         {           
             InitializeComponent();
-            //GetJsonAsync();
-            //GetJsonAsyncModel();
             GetJsonAsyncOC();
-            //statusField.IsVisible = false;
-            //Console.WriteLine(pricelistName); //tämä listan testausta varten
-        }
-
-        //Metodi jossa data luodaan stringbuilderiin
-        public async void GetJsonAsync()
-        {
-            var uri = new Uri("https://pakastin.fi/hinnat/prices");
-            //var uri = new Uri("https://api.jsonbin.io/v3/qs/6321dfb4a1610e63862adec3");
-            HttpClient httpClient = new HttpClient();
-            var response = await httpClient.GetAsync(uri);
-
-            if (response.IsSuccessStatusCode)
-            {
-                //statusField.Text = "Onnistui koodilla: " + response;
-                var content = await response.Content.ReadAsStringAsync();
-                string json = content.ToString();
-                var jsonObject = JObject.Parse(json);
-
-                var prices = jsonObject["prices"];
-                var jsonArray = JArray.Parse(prices.ToString());
-
-                foreach (var item in jsonArray)
-                {
-                    string date = item["date"].ToString();
-                    string displayDate = DateTime.Parse(date).ToString("M/d/yyyy HH"); //muutetaan päivämäärä toiseen, yhtenäisempään string-muotoon
-                    string price = item["value"].ToString();
-                    double price2 = double.Parse(price) / 10;
-
-                    if (taxSwitch.IsToggled)
-                    {
-                        price2 = price2 * 1.24;
-                    }
-
-                    //tämänhetkinen kellonaika
-                    if (displayDate.ToString().Contains(todayHour))
-                    {
-                        sb.Append("Klo " + DateTime.Parse(date).ToString("HH:mm") + " -  " + price2.ToString("F") + " c/kWh" + "\n");
-                        //sb.Append(todayHourCorrected + " " + price2.ToString("F") + " c/kWh" + "\n");
-                        //sb.Append("Testataan: " + todayHour2);
-                        //sb.Append(DateTime.Parse(date).ToString());
-                    }
-
-                    //kaikki tämän vuodokauden rivit                    
-                    if (date.Contains(today.ToShortDateString()))
-                    {
-                        string startTime = DateTime.Parse(date).AddHours(3).ToString("HH:mm"); //koska JSON-datassa CET-ajat, lisätään tunteja
-                        string endTime = DateTime.Parse(date).AddHours(4).ToString("HH:mm"); //päättymisaika on 1h alkamisajasta
-
-                        sb2.Append("Klo " + startTime + "-" + endTime + ", hinta: " + price2.ToString("F") + " c/kWh" + "\n"); //muutetaan hinta string-muotoon ja pakotetaan 2 desimaalia
-                        //sb2.Append(date + " " +  price2.ToString("F") + " c/kWh" + "\n");
-                    }
-
-                    if (date.Contains(today.AddDays(1).ToShortDateString()))
-                    {
-                        pricesTomorrow.IsVisible = true;
-                        string startTime = DateTime.Parse(date).AddHours(1).ToString("HH:mm"); //koska JSON-datassa CET-ajat, lisätään yksi tunti
-                        string endTime = DateTime.Parse(date).AddHours(2).ToString("HH:mm"); //päättymisaika on 1h alkamisajasta                        
-
-                        sb3.Append("Klo " + startTime + "-" + endTime + ", hinta: " + price2.ToString("F") + " c/kWh" + "\n"); //muutetaan hinta string-muotoon ja pakotetaan 2 desimaalia                        
-                    }
-                }
-
-                priceFieldNow.Text = "Hinta nyt: " + "\n" + sb.ToString();
-                priceFieldToday.Text = sb2.ToString() + "\n";
-                //statusField.Text = "Tiedot haettu onnistuneesti";
-                //statusField.IsVisible = false;
-            }
-            else
-            {
-                await DisplayAlert("Virhe!", "Json-data ei ole saatavilla, tai siihen ei saatu yhteyttä", "OK");
-                statusField.IsVisible = true;
-                statusField.Text = "Virhe, ei yhteyttä?";
-            }
-        }
-
-        //Metodi jossa data haetaan omaan modeliin
-        //async void GetJsonAsyncModel()
-        //{
-        //    var uri = new Uri("https://pakastin.fi/hinnat/prices");            
-        //    HttpClient httpClient = new HttpClient();
-        //    var response = await httpClient.GetAsync(uri);
-
-        //    if (response.IsSuccessStatusCode)
-        //    {
-        //        //statusField.Text = "Onnistui koodilla: " + response;
-        //        var content = await response.Content.ReadAsStringAsync(); // kokeile Simon getstringasync
-        //        string json = content.ToString();                
-        //        var jsonObject = JObject.Parse(json);
-
-        //        //Deserialisoinnin testailua
-        //        //var data = JsonConvert.DeserializeObject<Price>(json);
-        //        //if (data.ToString().Contains("2022"))
-        //        //{
-        //        //    priceFieldToday.Text = data.ToString();
-        //        //}
-
-        //        //IList testi
-        //        //var templist = jsonObject["prices"].ToObject<IList<Price>>();            
-
-        //        var prices = jsonObject["prices"];
-        //        var jsonArray = JArray.Parse(prices.ToString());
-
-        //        foreach (var item in jsonArray)
-        //        {
-        //            Price p = new Price();
-        //            string date = item["date"].ToString();
-        //            string price = item["value"].ToString();
-        //            //string trimmedDate = date.Substring(date.IndexOf(' ') + 1);
-        //            //string displayDate = DateTime.Parse(trimmedDate).ToString("dd/MM/yyyy HH:mm"); //muutetaan päivämäärä string-muotoon
-        //            p.date = DateTime.Parse(date);
-        //            p.value = double.Parse(price); // tähän tyssää jos int, "Input string was not in a correct format"
-        //            pricelist.Add(p);
-        //        }
-
-        //        //LINQ-kysely
-        //        var today = pricelist.Where(p => p.date.ToString().Contains(todayHour));
-        //        foreach (var dailyprice in today)
-        //        {
-        //            priceListView.ItemsSource = dailyprice.ToString();
-        //            priceFieldToday.Text = pricelist.ToString();
-        //        }
-
-        //        //Find
-        //        //List<Price> tänään = pricelist.FindAll(p => p.date.ToString().Contains(today.ToString()));
-        //        //foreach (var dailyprice in tänään)
-        //        //{
-        //        //    priceListView.ItemsSource = tänään.ToString();
-        //        //    priceFieldToday.Text = dailyprice.ToString(); // palauttaa app nimen ja listan nimen? tutkittava
-        //        //}
-        //        //priceFieldToday.Text = tänään.ToString();
-
-        //        //statusField.Text = "Tiedot haettu onnistuneesti";
-        //    }
-        //    else
-        //    {
-        //        await DisplayAlert("Virhe!", "Json-data ei ole saatavilla, tai siihen ei saatu yhteyttä", "OK");
-        //        statusField.Text = "Virhe, ei yhteyttä?";
-        //    }
-        //}
-
+            statusField.IsVisible = false;            
+        }  
+        
         async void GetJsonAsyncOC()
         {
             HttpClient httpClient = new HttpClient();
@@ -192,112 +41,141 @@ namespace Sähköhinta_App
             var jsonObject = JObject.Parse(json);
             var prices = jsonObject["prices"];
             var jsonArray = JArray.Parse(prices.ToString());
+            
+            DateTime startDateTime = DateTime.Today; //Tänään klo 00:00:00
+            DateTime endDateTime = DateTime.Today.AddDays(1).AddTicks(-1); //Tänään klo 23:59:59
 
-            //siirrä päivämäärät ylös? kopioi alta huomisen päivämäärät helposti?
-            DateTime startDateTime = DateTime.Today; //Today at 00:00:00
-            DateTime endDateTime = DateTime.Today.AddDays(1).AddTicks(-1); //Today at 23:59:59
+            DateTime startDateTimeTomorrow = DateTime.Today.AddDays(1); //Huomenna klo 00:00:00
+            DateTime endDateTimeTomorrow = DateTime.Today.AddDays(2).AddTicks(-1); //Huomenna klo 23:59:59
 
-            List<Price> prixe = JsonConvert.DeserializeObject<List<Price>>(jsonArray.ToString());
-            ObservableCollection<Price> dataa = new ObservableCollection<Price>(prixe);
+            List<Price> pricelist = JsonConvert.DeserializeObject<List<Price>>(jsonArray.ToString());
+            ObservableCollection<Price> dataa = new ObservableCollection<Price>(pricelist);            
 
-            //prixe = prixe.OrderBy(x => x.value).ToList(); //tutki tätä jos haluaa järjestää listaa ennenkuin näyttää sen
-            //prixe = prixe.Where(x => x.date.Month == DateTime.Today.Month).ToList(); //tutki tätä lisää!
-            //prixe = prixe.Where(x => x.date.Month == 9).ToList(); // tietty kuukausi
-            //prixe = prixe.Where(x => x.date.ToString() == DateTime.Now.ToString("M/d/yyyy HH")).ToList();
-            prixe = prixe.Where(x => x.date >=startDateTime && x.date<= endDateTime).ToList(); //TÄLLÄ TOIMII NYT KOKO KULUVAN VUOROKAUDEN TUNNIT
+            //haetaan päivän hinnat
+            pricelist = pricelist.Where(x => x.date >=startDateTime && x.date<= endDateTime).ToList();
 
-            //Console.WriteLine("TIPPING TIME " + prixe);
+            //haetaan huomisen hinnat
+            var pricelistTomorrow = pricelist.Where(x => x.date >= startDateTimeTomorrow && x.date <= endDateTimeTomorrow).ToList();
 
-            //double uselessTotal = prixe.Sum(x => x.value);
-            //Console.WriteLine($"The total number of paid kilowatts is {uselessTotal}");
+            //Vuorokauden korkein hinta
+            var dailyMax = pricelist.Max(x => x.value);
+            highPrice.Text = (dailyMax/10).ToString() + " c/kWh";
 
-            //double monthlyAvg = 0;
-            //monthlyAvg = prixe.Where(x => x.date.Month == DateTime.Today.Month).Average(x => x.value);
-            //Console.WriteLine($"This month's average is: {monthlyAvg}");
+            //Vuorokauden alin hinta
+            var dailyMin = pricelist.Min(x => x.value);
+            lowPrice.Text = (dailyMin/10).ToString() + " c/kWh";
 
+            //Vuorokauden keskihinta                                                                                                                                                            
             double dailyAvg = 0;
-            dailyAvg = prixe.Where(x => x.date >= startDateTime && x.date <= endDateTime).Average(x => x.value);
+            dailyAvg = pricelist.Where(x => x.date >= startDateTime && x.date <= endDateTime).Average(x => x.value);
             Console.WriteLine($"Today's average is: {dailyAvg}");
-            avgTodayPrice.Text = (dailyAvg/10).ToString("F") + " c/kWh";
+            avgPrice.Text = (dailyAvg/10).ToString("F") + " c/kWh";
 
-            //TÄMÄ TÄMÄ TÄMÄ
-            //TÄLLÄ SAA LISTATTUA AINAKIN KONSOLIIN MITÄ HALUAA MODAA TÄTÄ JA TÄN ALTA KAIKKI FUCK YEAH
-            foreach (var price in prixe)
+            //Tämänhetkinen hinta
+            foreach (var item in jsonArray)
             {
-                string date = price.date.ToString("M/d/yyyy HH"); //muutetaan päivämäärä toiseen, yhtenäisempään string-muotoon
-                Double value = price.value;
+                string date = item["date"].ToString();
+                string displayDate = DateTime.Parse(date).ToString("M/d/yyyy HH"); //muutetaan päivämäärä toiseen, yhtenäisempään string-muotoon
+                string price = item["value"].ToString();
+                double price2 = double.Parse(price);
 
-                Console.WriteLine(date + " " + value);
-                priceFieldToday.Text = date + " " + value + "\n"; //tämä antaa kuitenkin vain vikan arvon?
-                priceListView.ItemsSource = dataa.Where(x => x.date >= startDateTime && x.date <= endDateTime); //antaa nyt listalle koko vuorokauden tunnit :)
+                if (displayDate.ToString().Contains(todayHour))
+                {
+                    //ALV 24% asettaminen tämänhetkiseen hintaan
+                    if (taxSwitch.IsToggled)
+                    {
+                        double price24 = price2 * 1.24;
+                        priceFieldNow.Text = "Hinta nyt: " + (price24 / 10).ToString("F") + " c/kWh";
+                    }
+                    else
+                    {
+                        priceFieldNow.Text = "Hinta nyt: " + (price2 / 10).ToString("F") + " c/kWh";
+                    }
+                }
+
+                //Tarkistetaan samalla jos huomisen hinnat näkyy
+                if (date.Contains(today.AddDays(1).ToShortDateString()))
+                {
+                    pricesTomorrowButton.IsVisible = true;
+                    priceListViewTomorrow.ItemsSource = dataa.Where(x => x.date >= startDateTimeTomorrow && x.date <= endDateTimeTomorrow);
+                }
+            }
+            
+
+            //ALV 24% asettaminen muihin hintoihin
+            if (taxSwitch.IsToggled)
+            {                
+                var rows24 = from row in dataa.Where(x => x.date >= startDateTime && x.date <= endDateTime)
+                           select row;
+
+                foreach (var row in rows24)
+                {
+                    row.value = row.value * 1.24;
+                }
+
+                var dailyMax24 = pricelist.Max(x => x.value);
+                highPrice.Text = dailyMax24.ToString("F") + " c/kWh";
+
+                var dailyMin24 = pricelist.Min(x => x.value);
+                lowPrice.Text = dailyMin24.ToString("F") + " c/kWh";
+
+                double dailyAvg24 = 0;
+                dailyAvg24 = pricelist.Where(x => x.date >= startDateTime && x.date <= endDateTime).Average(x => x.value);
+                Console.WriteLine($"Today's average is: {dailyAvg24}");
+                avgPrice.Text = dailyAvg24.ToString("F") + " c/kWh";
             }
 
-            //VANHEMPAA TESTAILUA, pidetään toistaiseksi tallessa
-            //JObject price = JObject.Parse(json); //TÄSTÄ OTA TÄSTÄ OTA TÄSTÄ OTA TÄSTÄ OTA TÄSTÄ OTA TÄSTÄ OTA TÄSTÄ OTA TÄSTÄ OTA TÄSTÄ OTA TÄSTÄ OTA 
-            //List <JToken> tokens = price.Children().ToList()
-            //Console.WriteLine(price.ToString()); //tämä toimii nyt, eli listaa kaikki!
+            //Kaikki tämän päivän hinnat
+            var rows = from row in dataa.Where(x => x.date >= startDateTime && x.date <= endDateTime)
+                       select row;
 
-            //var plöö = price["prices"][0]; //tällä antaa ekan ilmentymän
-            //Console.WriteLine(plöö);
+            foreach (var row in rows)
+            {
+                row.value = row.value/10;
+            }
+            priceListView.ItemsSource = dataa.Where(x => x.date >= startDateTime && x.date <= endDateTime);
 
-            //var blaa = price["prices"]; // tällä antaa myös kaikki ilmentymät
-            //Console.WriteLine(blaa);
-
-            //foreach(var item in blaa)
-            //{
-            //    DateTime date = (DateTime)item["date"];
-            //    string displayDate = date.ToString("M/d/yyyy HH"); //muutetaan päivämäärä toiseen, yhtenäisempään string-muotoon
-            //    double prices = (double)item["value"]; // tähän double ja tsek desimaalit
-
-            //    if (displayDate.ToString().Contains(today.ToShortDateString()))
-            //    {
-            //        Console.WriteLine(displayDate.ToString() + " " +  prices);
-            //        priceListView.ItemsSource = displayDate.ToString() + " " + prices; //tulostaa kirjaimen per rivi ja vain viimeisimmän esiintymän?
-            //    }
-            //}           
         }
 
-        private void pricesTomorrow_Clicked(object sender, EventArgs e)
+        private void pricesTomorrowButton_Clicked(object sender, EventArgs e)
         {
-            pricesToday.IsVisible = true;
-            pricesTomorrow.IsVisible = false;
+            pricesTodayButton.IsVisible = true;
+            pricesTomorrowButton.IsVisible = false;
             if (taxSwitch.IsToggled)
             {
-                priceFieldLabel.Text = "Hinnat huomenna (ALV 24%)";
+                priceFieldLabel.Text = "Hinnat huomenna";
             }
             else
             {
-                priceFieldLabel.Text = "Hinnat huomenna (ALV 0%)";
+                priceFieldLabel.Text = "Hinnat huomenna";
             }
-            priceFieldToday.Text = sb3.ToString() + "\n"; 
+            priceListView.IsVisible= false;
+            priceListViewTomorrow.IsVisible = true;
         }
 
-        private void pricesToday_Clicked(object sender, EventArgs e)
+        private void pricesTodayButton_Clicked(object sender, EventArgs e)
         {
-            pricesTomorrow.IsVisible = true;
-            pricesToday.IsVisible = false;
+            pricesTomorrowButton.IsVisible = true;
+            pricesTodayButton.IsVisible = false;
             if (taxSwitch.IsToggled)
 
             {
-                priceFieldLabel.Text = "Hinnat tänään (ALV 24%)";
+                priceFieldLabel.Text = "Hinnat tänään";
             }
             else
             {
-                priceFieldLabel.Text = "Hinnat tänään (ALV 0%)";
+                priceFieldLabel.Text = "Hinnat tänään";
             }
-            priceFieldToday.Text = sb2.ToString() + "\n";
+            priceListView.IsVisible = true;
+            priceListViewTomorrow.IsVisible = false;
         }
 
         private void reloadButton_Clicked(object sender, EventArgs e)
         {
             priceFieldNow.Text = "Päivitetään...";
-            priceFieldToday.Text = "";
-            sb.Clear();
-            sb2.Clear();
-            sb3.Clear();
+            //priceFieldToday.Text = "";
+            sb.Clear(); //poistoon?
             GetJsonAsyncOC();  
         }
     }
-
-
 }

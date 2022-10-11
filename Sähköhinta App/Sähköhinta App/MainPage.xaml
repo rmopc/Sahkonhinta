@@ -4,61 +4,101 @@
              x:Class="Sähköhinta_App.MainPage" 
              xmlns:android="clr-namespace:Xamarin.Forms.PlatformConfiguration.AndroidSpecific;assembly=Xamarin.Forms.Core"
              android:TabbedPage.ToolbarPlacement="Bottom"
-             BarBackgroundColor="Black" BarTextColor="White"
+             BarBackgroundColor="Gray" BarTextColor="White"
              SelectedTabColor="Gray"
-             UnselectedTabColor="Red"
-             BackgroundColor="DodgerBlue"
+             UnselectedTabColor="Red"             
             >
-    <ContentPage Title="Prices">
-    <ScrollView>
-        <StackLayout >
-            <Frame BackgroundColor="Azure"  Padding="24" CornerRadius="0">
-                <Label Text="Sähkön hinta" HorizontalTextAlignment="Center" TextColor="Gray" FontSize="40"/>
+    
+    <ContentPage Title="HINNAT">
+
+        <ContentPage.Resources>
+
+            <!-- Light colors -->
+            <Color x:Key="LightPrimaryColor">WhiteSmoke</Color>
+            <Color x:Key="LightSecondaryColor">Black</Color>
+
+            <!-- Dark colors -->
+            <Color x:Key="DarkPrimaryColor">Black</Color>
+            <Color x:Key="DarkSecondaryColor">WhiteSmoke</Color>
+
+            <Style x:Key="ButtonStyle"
+               TargetType="Button">
+                <Setter Property="BackgroundColor"
+                    Value="{AppThemeBinding Light={StaticResource LightPrimaryColor}, Dark={StaticResource DarkPrimaryColor}}" />
+                <Setter Property="TextColor"
+                    Value="{AppThemeBinding Light={StaticResource LightSecondaryColor}, Dark={StaticResource DarkSecondaryColor}}" />
+            </Style>
+
+        </ContentPage.Resources>
+
+        <ScrollView>
+            <StackLayout BackgroundColor="{AppThemeBinding Light={StaticResource LightPrimaryColor}, Dark={StaticResource DarkPrimaryColor}}">
+                <Frame  Padding="1" CornerRadius="5" BackgroundColor="{AppThemeBinding Light={StaticResource LightPrimaryColor}, Dark={StaticResource DarkPrimaryColor}}" >
+                    <Label Text="SähköSpot" HorizontalTextAlignment="Center" FontSize="60" TextColor="{AppThemeBinding Light=Black, Dark=Gray}"/>
             </Frame>
-            <Label x:Name="statusField" Text="tilaa päivitetään..." FontSize="16" Padding="30,0,30,0" HorizontalTextAlignment="Center" />
-            
-            <Label x:Name="priceFieldNow" Text="tietoja haetaan..." FontSize="16" Padding="30,0,30,0" HorizontalTextAlignment="Center" />
+                <Label x:Name="statusField" Text="tilaa päivitetään..." FontSize="16" Padding="30,0,30,0" HorizontalTextAlignment="Center"  TextColor="{AppThemeBinding Light=Black, Dark=Gray}"/>
 
-            <Button x:Name="pricesToday" Text="Hinnat tänään" IsVisible="False" Clicked="pricesToday_Clicked"/>
-            <Button x:Name="pricesTomorrow" Text="Hinnat huomenna" IsVisible="False" Clicked="pricesTomorrow_Clicked"/>
-
-            <Label x:Name="priceFieldLabel" Text="Hinnat tänään (ALV 0%)" FontSize="24" HorizontalTextAlignment="Center"/>
-            <Label x:Name="priceFieldToday" Text="tietoja haetaan..." FontSize="16" Padding="30,0,30,0" HorizontalTextAlignment="Center"/>
+                <Label x:Name="priceFieldNow" Text="tietoja haetaan..." FontSize="18" Padding="30,0,30,0" HorizontalTextAlignment="Center"  TextColor="{AppThemeBinding Light=Black, Dark=Gray}"/>
 
                 <StackLayout Orientation="Horizontal" HorizontalOptions="Center" >
-                    <Label x:Name="avgTodayLabel" FontSize="18" Text="Keskihinta tänään:"/>
-                    <Label x:Name="avgTodayPrice" FontSize="18"  Text="Tietoja haetaan..."/>                   
+                    <Label x:Name="avgLabel" FontSize="18" Text="Keskihinta tänään:" TextColor="{AppThemeBinding Light=Black, Dark=Gray}"/>
+                    <Label x:Name="avgPrice" FontSize="18"  Text="Tietoja haetaan..." TextColor="{AppThemeBinding Light=Black, Dark=Gray}"/>                   
                 </StackLayout>
-                <StackLayout Orientation="Horizontal" HorizontalOptions="Center">
-                    <Label x:Name="avgTomorrowLabel" FontSize="18" Text="Keskihinta huomenna:"/>
+                <Frame BackgroundColor="{AppThemeBinding Light=WhiteSmoke, Dark=Black}">
+                    <StackLayout Orientation="Horizontal" HorizontalOptions="Center" >
+                        <Label x:Name="lowLabel" FontSize="14" Text="Halvin hinta:" TextColor="{AppThemeBinding Light=Black, Dark=Gray}"/>
+                        <Label x:Name="lowPrice" FontSize="15"  Text="Tietoja haetaan..." TextColor="Green"/>
+                        <Label x:Name="highLabel" FontSize="14" Text="Kallein hinta:" TextColor="{AppThemeBinding Light=Black, Dark=Gray}"/>
+                        <Label x:Name="highPrice" FontSize="15"  Text="Tietoja haetaan..." TextColor="Red"/>
+                    </StackLayout>
+                </Frame>
+
+                <!--<StackLayout Orientation="Horizontal" HorizontalOptions="Center">
+                    <Label x:Name="avgTomorrowLabel" FontSize="18" Text="Keskiarvo huomenna:"/>
                     <Label x:Name="avgTomorrowPrice" FontSize="18"  Text="Tietoja haetaan..."/>
-                </StackLayout>
+                </StackLayout>-->
+                <Button x:Name="pricesTodayButton" Text="Hinnat tänään" IsVisible="False" Clicked="pricesTodayButton_Clicked"/>
+                <Button x:Name="pricesTomorrowButton" Text="Hinnat huomenna"  Clicked="pricesTomorrowButton_Clicked"/>
+                <Button x:Name="reloadButton" Text="Päivitä näkymä" Clicked="reloadButton_Clicked" CornerRadius="5" Padding="10"/>
 
-                <Button x:Name="reloadButton" Text="Päivitä näkymä" Clicked="reloadButton_Clicked"/>
-            <!--<Label x:Name="priceFieldTomorrow" Text="tietoja haetaan..." FontSize="16" Padding="30,0,30,0" HorizontalTextAlignment="Center" IsEnabled="False" />-->
-
-            <ListView 
+                <Label x:Name="priceFieldLabel" Text="Hinnat tänään" FontSize="24" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Light=Black, Dark=Gray}"/>
+                <ListView 
                 x:Name="priceListView" Margin="3" RowHeight="40"
-                SeparatorVisibility="None">
+                SeparatorVisibility="None" >
                     <ListView.ItemTemplate >
-                        <DataTemplate >
-                            <TextCell Text="{Binding date, StringFormat='{0: klo HH:00}'}" Detail="{Binding value, StringFormat='{}{0:c}'}" TextColor="Black" DetailColor="Red"/>
+                        <DataTemplate  >
+                            <TextCell Text="{Binding date, StringFormat='{0: klo HH:00}'}" Detail="{Binding value, StringFormat='{}{0:,0.00 c/kWh}'}" TextColor="{AppThemeBinding Light=Black, Dark=Gray}"  DetailColor="Red"/>
                         </DataTemplate>
                     </ListView.ItemTemplate>
-                    <ListView.Header>
-                        <!--Tee tästä nappula?-->
+                    <!--<ListView.Header>
+                        --><!--Tee tästä nappula?--><!--
                         <Label x:Name="listLabel" Text="Hinnat alv 0%"  TextColor="Black" FontSize="12"/>
-                    </ListView.Header>
+                    </ListView.Header>-->
             </ListView>
-            
-        </StackLayout>
+                <ListView 
+                x:Name="priceListViewTomorrow" Margin="3" RowHeight="40" IsVisible="false"
+                SeparatorVisibility="None" >
+                    <ListView.ItemTemplate >
+                        <DataTemplate  >
+                            <TextCell Text="{Binding date, StringFormat='{0: klo HH:00}'}" Detail="{Binding value, StringFormat='{}{0:,0.00 c/kWh}'}"  TextColor="{AppThemeBinding Light=Black, Dark=Gray}"  DetailColor="Red"/>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                    <!--<ListView.Header>
+                        -->
+                    <!--Tee tästä nappula?-->
+                    <!--
+                        <Label x:Name="listLabel" Text="Hinnat alv 0%"  TextColor="Black" FontSize="12"/>
+                    </ListView.Header>-->
+                </ListView>
+
+            </StackLayout>
      </ScrollView>
     </ContentPage>
 
-    <ContentPage Title="Settings" BackgroundColor="DodgerBlue">
+    <ContentPage Title="ASETUKSET">
         <StackLayout>
-            <Frame BackgroundColor="Azure"  Padding="24" CornerRadius="0">
-                <Label Text="Testailua" HorizontalTextAlignment="Center" TextColor="Gray" FontSize="40"/>
+            <Frame BackgroundColor="LightBlue"  Padding="5" CornerRadius="5">
+                <Label Text="Asetukset" HorizontalTextAlignment="Center" TextColor="Gray" FontSize="40"/>
             </Frame>
             <Label Text="Lisää hintoihin ALV?"/>
             <Switch x:Name="taxSwitch" IsToggled="False"/>
