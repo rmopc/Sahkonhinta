@@ -96,13 +96,42 @@
     </ContentPage>
 
     <ContentPage Title="ASETUKSET">
+        <ContentPage.Resources>
+
+            <!-- Light colors -->
+            <Color x:Key="LightPrimaryColor">WhiteSmoke</Color>
+            <Color x:Key="LightSecondaryColor">Black</Color>
+
+            <!-- Dark colors -->
+            <Color x:Key="DarkPrimaryColor">Black</Color>
+            <Color x:Key="DarkSecondaryColor">WhiteSmoke</Color>
+
+            <Style x:Key="ButtonStyle"
+               TargetType="Button">
+                <Setter Property="BackgroundColor"
+                    Value="{AppThemeBinding Light={StaticResource LightPrimaryColor}, Dark={StaticResource DarkPrimaryColor}}" />
+                <Setter Property="TextColor"
+                    Value="{AppThemeBinding Light={StaticResource LightSecondaryColor}, Dark={StaticResource DarkSecondaryColor}}" />
+            </Style>
+
+        </ContentPage.Resources>
         <StackLayout>
-            <Frame BackgroundColor="LightBlue"  Padding="5" CornerRadius="5">
-                <Label Text="Asetukset" HorizontalTextAlignment="Center" TextColor="Gray" FontSize="40"/>
+            <Frame BackgroundColor="{AppThemeBinding Light={StaticResource LightPrimaryColor}, Dark={StaticResource DarkPrimaryColor}}"  Padding="5" CornerRadius="5">
+                <Label Text="Asetukset" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Light=Black, Dark=Gray}" FontSize="40"/>
             </Frame>
-            <Label Text="Lisää hintoihin ALV?"/>
-            <Switch x:Name="taxSwitch" IsToggled="False"/>
+            <Label Text="Tästä voit valita laskennassa sovellettavan ALV-prosentin. Muista päivittää näkymä prosentin valinnan jälkeen." HorizontalTextAlignment="Center"/>
+
+            <Label Text="Valitse ALV:" HorizontalOptions="Center"/>
+            <StackLayout Orientation="Horizontal" HorizontalOptions="Center" >
+                <Button x:Name="tax00" Text="ALV 0%" Clicked="tax00_Clicked" IsEnabled="False"></Button>
+                <Button x:Name="tax14" Text="ALV 14%" Clicked="tax14_Clicked"></Button>
+                <Button x:Name="tax22" Text="ALV 22%" Clicked="tax22_Clicked"></Button>
+            </StackLayout>
             <Button x:Name="settingsReloadButton" Text="Päivitä näkymä" Clicked="reloadButton_Clicked"/>
+            <StackLayout VerticalOptions="EndAndExpand">
+                <Label Text="Ⓒ Ronie Oljemark 2022" HorizontalTextAlignment="Center"/>
+            </StackLayout>
         </StackLayout>
     </ContentPage>
+    
 </TabbedPage>

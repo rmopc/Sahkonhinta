@@ -12,6 +12,7 @@ using Newtonsoft.Json.Linq;
 using System.Diagnostics;
 using System.Collections.ObjectModel;
 using System.Reflection;
+using Xamarin.Essentials;
 
 namespace Sähköhinta_App
 {
@@ -20,15 +21,16 @@ namespace Sähköhinta_App
         StringBuilder sb = new StringBuilder();
        
         DateTime today = DateTime.Today;
-        DateTime yesterday = DateTime.Today.AddDays(-1);           
-
         String todayHour = DateTime.Now.AddHours(-4).ToString("M/d/yyyy HH"); //muunnetaan CET-ajasta Suomen aikaan
+
+        double taxPercentage = 1;
+        //float tomorrowDivider = 10.0f;
                 
         public MainPage()
         {           
             InitializeComponent();
             GetJsonAsyncOC();
-            statusField.IsVisible = false;            
+            statusField.IsVisible = false;
         }  
         
         async void GetJsonAsyncOC()
@@ -49,27 +51,31 @@ namespace Sähköhinta_App
             DateTime endDateTimeTomorrow = DateTime.Today.AddDays(2).AddTicks(-1); //Huomenna klo 23:59:59
 
             List<Price> pricelist = JsonConvert.DeserializeObject<List<Price>>(jsonArray.ToString());
-            ObservableCollection<Price> dataa = new ObservableCollection<Price>(pricelist);            
+            ObservableCollection<Price> pricedata = new ObservableCollection<Price>(pricelist);            
 
             //haetaan päivän hinnat
             pricelist = pricelist.Where(x => x.date >=startDateTime && x.date<= endDateTime).ToList();
 
-            //haetaan huomisen hinnat
+            //haetaan huomisen hinnat, ei käytössä vielä
             var pricelistTomorrow = pricelist.Where(x => x.date >= startDateTimeTomorrow && x.date <= endDateTimeTomorrow).ToList();
 
             //Vuorokauden korkein hinta
             var dailyMax = pricelist.Max(x => x.value);
-            highPrice.Text = (dailyMax/10).ToString() + " c/kWh";
+            //var dailyMaxTomorrow = pricelistTomorrow.Max(x => x.value);
+            highPrice.Text = (dailyMax/10 * taxPercentage).ToString() + " c/kWh";
+            //if (isToday == false)
+            //{
+            //    highPrice.Text = (dailyMaxTomorrow / 10).ToString() + " c/kWh";
+            //}            
 
             //Vuorokauden alin hinta
             var dailyMin = pricelist.Min(x => x.value);
-            lowPrice.Text = (dailyMin/10).ToString() + " c/kWh";
+            lowPrice.Text = (dailyMin/ 10 * taxPercentage).ToString() + " c/kWh";
 
             //Vuorokauden keskihinta                                                                                                                                                            
             double dailyAvg = 0;
-            dailyAvg = pricelist.Where(x => x.date >= startDateTime && x.date <= endDateTime).Average(x => x.value);
-            Console.WriteLine($"Today's average is: {dailyAvg}");
-            avgPrice.Text = (dailyAvg/10).ToString("F") + " c/kWh";
+            dailyAvg = pricelist.Where(x => x.date >= startDateTime && x.date <= endDateTime).Average(x => x.value);            
+            avgPrice.Text = (dailyAvg/ 10 * taxPercentage).ToString("F") + " c/kWh";
 
             //Tämänhetkinen hinta
             foreach (var item in jsonArray)
@@ -81,74 +87,42 @@ namespace Sähköhinta_App
 
                 if (displayDate.ToString().Contains(todayHour))
                 {
-                    //ALV 24% asettaminen tämänhetkiseen hintaan
-                    if (taxSwitch.IsToggled)
-                    {
-                        double price24 = price2 * 1.24;
-                        priceFieldNow.Text = "Hinta nyt: " + (price24 / 10).ToString("F") + " c/kWh";
-                    }
-                    else
-                    {
-                        priceFieldNow.Text = "Hinta nyt: " + (price2 / 10).ToString("F") + " c/kWh";
-                    }
+                    priceFieldNow.Text = "Hinta nyt: " + (price2 / 10 * taxPercentage).ToString("F") + " c/kWh";
                 }
 
                 //Tarkistetaan samalla jos huomisen hinnat näkyy
                 if (date.Contains(today.AddDays(1).ToShortDateString()))
                 {
                     pricesTomorrowButton.IsVisible = true;
-                    priceListViewTomorrow.ItemsSource = dataa.Where(x => x.date >= startDateTimeTomorrow && x.date <= endDateTimeTomorrow);
+                    var rowsTomorrow = from row in pricedata.Where(x => x.date >= startDateTimeTomorrow && x.date <= endDateTimeTomorrow)
+                                       select row;
+
+                    foreach (var row in rowsTomorrow)
+                    {
+                        row.value = row.value * taxPercentage;
+                    }
+
+                    priceListViewTomorrow.ItemsSource = pricedata.Where(x => x.date >= startDateTimeTomorrow && x.date <= endDateTimeTomorrow);
                 }
-            }
-            
-
-            //ALV 24% asettaminen muihin hintoihin
-            if (taxSwitch.IsToggled)
-            {                
-                var rows24 = from row in dataa.Where(x => x.date >= startDateTime && x.date <= endDateTime)
-                           select row;
-
-                foreach (var row in rows24)
-                {
-                    row.value = row.value * 1.24;
-                }
-
-                var dailyMax24 = pricelist.Max(x => x.value);
-                highPrice.Text = dailyMax24.ToString("F") + " c/kWh";
-
-                var dailyMin24 = pricelist.Min(x => x.value);
-                lowPrice.Text = dailyMin24.ToString("F") + " c/kWh";
-
-                double dailyAvg24 = 0;
-                dailyAvg24 = pricelist.Where(x => x.date >= startDateTime && x.date <= endDateTime).Average(x => x.value);
-                Console.WriteLine($"Today's average is: {dailyAvg24}");
-                avgPrice.Text = dailyAvg24.ToString("F") + " c/kWh";
-            }
+            }      
 
             //Kaikki tämän päivän hinnat
-            var rows = from row in dataa.Where(x => x.date >= startDateTime && x.date <= endDateTime)
+            var rows = from row in pricedata.Where(x => x.date >= startDateTime && x.date <= endDateTime)
                        select row;
 
             foreach (var row in rows)
             {
-                row.value = row.value/10;
+                row.value = row.value/10 * taxPercentage;
             }
-            priceListView.ItemsSource = dataa.Where(x => x.date >= startDateTime && x.date <= endDateTime);
+            priceListView.ItemsSource = pricedata.Where(x => x.date >= startDateTime && x.date <= endDateTime);
 
         }
 
         private void pricesTomorrowButton_Clicked(object sender, EventArgs e)
-        {
+        {            
             pricesTodayButton.IsVisible = true;
             pricesTomorrowButton.IsVisible = false;
-            if (taxSwitch.IsToggled)
-            {
-                priceFieldLabel.Text = "Hinnat huomenna";
-            }
-            else
-            {
-                priceFieldLabel.Text = "Hinnat huomenna";
-            }
+            priceFieldLabel.Text = "Hinnat huomenna";
             priceListView.IsVisible= false;
             priceListViewTomorrow.IsVisible = true;
         }
@@ -157,15 +131,8 @@ namespace Sähköhinta_App
         {
             pricesTomorrowButton.IsVisible = true;
             pricesTodayButton.IsVisible = false;
-            if (taxSwitch.IsToggled)
+            priceFieldLabel.Text = "Hinnat tänään";
 
-            {
-                priceFieldLabel.Text = "Hinnat tänään";
-            }
-            else
-            {
-                priceFieldLabel.Text = "Hinnat tänään";
-            }
             priceListView.IsVisible = true;
             priceListViewTomorrow.IsVisible = false;
         }
@@ -176,6 +143,31 @@ namespace Sähköhinta_App
             //priceFieldToday.Text = "";
             sb.Clear(); //poistoon?
             GetJsonAsyncOC();  
+        }
+
+        private void tax00_Clicked(object sender, EventArgs e)
+        {
+            taxPercentage = 1;
+            tax00.IsEnabled = false; 
+            tax14.IsEnabled = true;
+            tax22.IsEnabled = true;
+        }
+
+        private void tax14_Clicked(object sender, EventArgs e)
+        {
+            
+            taxPercentage = 1.14;
+            tax00.IsEnabled = true;
+            tax14.IsEnabled = false;
+            tax22.IsEnabled = true;
+        }
+
+        private void tax22_Clicked(object sender, EventArgs e)
+        {
+            taxPercentage = 1.24;
+            tax00.IsEnabled = true;
+            tax14.IsEnabled = true;
+            tax22.IsEnabled = false;
         }
     }
 }
