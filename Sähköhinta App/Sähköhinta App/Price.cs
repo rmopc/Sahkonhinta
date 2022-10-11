@@ -7,16 +7,17 @@ namespace Sähköhinta_App
 {
     public class Price
     {
-        [JsonProperty("id")]
+        //[JsonProperty("id")]
         public string _id { get; set; }
 
-        [JsonProperty("date")]
+        //[JsonProperty("date")]
+
         public DateTime date { get; set; }
 
-        [JsonProperty("value")]
+        //[JsonProperty("value")]
         public double value { get; set; }
 
-        [JsonProperty("_v")]
+        //[JsonProperty("_v")]
         public int __v { get; set; }
     }
 

@@ -7,7 +7,8 @@
              BarBackgroundColor="Black" BarTextColor="White"
              SelectedTabColor="Gray"
              UnselectedTabColor="Red"
-             BackgroundColor="DodgerBlue">
+             BackgroundColor="DodgerBlue"
+            >
     <ContentPage Title="Prices">
     <ScrollView>
         <StackLayout >
@@ -24,15 +25,30 @@
             <Label x:Name="priceFieldLabel" Text="Hinnat tänään (ALV 0%)" FontSize="24" HorizontalTextAlignment="Center"/>
             <Label x:Name="priceFieldToday" Text="tietoja haetaan..." FontSize="16" Padding="30,0,30,0" HorizontalTextAlignment="Center"/>
 
-            <Button x:Name="reloadButton" Text="Päivitä näkymä" Clicked="reloadButton_Clicked"/>
+                <StackLayout Orientation="Horizontal" HorizontalOptions="Center" >
+                    <Label x:Name="avgTodayLabel" FontSize="18" Text="Keskihinta tänään:"/>
+                    <Label x:Name="avgTodayPrice" FontSize="18"  Text="Tietoja haetaan..."/>                   
+                </StackLayout>
+                <StackLayout Orientation="Horizontal" HorizontalOptions="Center">
+                    <Label x:Name="avgTomorrowLabel" FontSize="18" Text="Keskihinta huomenna:"/>
+                    <Label x:Name="avgTomorrowPrice" FontSize="18"  Text="Tietoja haetaan..."/>
+                </StackLayout>
+
+                <Button x:Name="reloadButton" Text="Päivitä näkymä" Clicked="reloadButton_Clicked"/>
             <!--<Label x:Name="priceFieldTomorrow" Text="tietoja haetaan..." FontSize="16" Padding="30,0,30,0" HorizontalTextAlignment="Center" IsEnabled="False" />-->
 
-            <ListView x:Name="priceListView" Margin="5" RowHeight="50">
-                    <ListView.ItemTemplate>
-                        <DataTemplate>
-                            <TextCell Text="{Binding date}" Detail="{Binding value}"/>
+            <ListView 
+                x:Name="priceListView" Margin="3" RowHeight="40"
+                SeparatorVisibility="None">
+                    <ListView.ItemTemplate >
+                        <DataTemplate >
+                            <TextCell Text="{Binding date, StringFormat='{0: klo HH:00}'}" Detail="{Binding value, StringFormat='{}{0:c}'}" TextColor="Black" DetailColor="Red"/>
                         </DataTemplate>
                     </ListView.ItemTemplate>
+                    <ListView.Header>
+                        <!--Tee tästä nappula?-->
+                        <Label x:Name="listLabel" Text="Hinnat alv 0%"  TextColor="Black" FontSize="12"/>
+                    </ListView.Header>
             </ListView>
             
         </StackLayout>

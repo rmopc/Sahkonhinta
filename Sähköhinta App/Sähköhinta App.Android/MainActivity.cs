@@ -4,6 +4,8 @@ using Android.App;
 using Android.Content.PM;
 using Android.Runtime;
 using Android.OS;
+using System.Globalization;
+using System.Threading;
 
 namespace Sähköhinta_App.Droid
 {
@@ -13,7 +15,7 @@ namespace Sähköhinta_App.Droid
         protected override void OnCreate(Bundle savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
-
+            this.SetLocale();
             Xamarin.Essentials.Platform.Init(this, savedInstanceState);
             global::Xamarin.Forms.Forms.Init(this, savedInstanceState);
             LoadApplication(new App());
@@ -23,6 +25,17 @@ namespace Sähköhinta_App.Droid
             Xamarin.Essentials.Platform.OnRequestPermissionsResult(requestCode, permissions, grantResults);
 
             base.OnRequestPermissionsResult(requestCode, permissions, grantResults);
+        }
+
+        void SetLocale()
+        {
+
+            CultureInfo ci = new CultureInfo("fi-FI");
+
+            Thread.CurrentThread.CurrentCulture = ci;
+            Thread.CurrentThread.CurrentUICulture = ci;
+
+            Console.WriteLine("CurrentCulture set: " + ci.Name);
         }
     }
 }

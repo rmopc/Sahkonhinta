@@ -16,9 +16,9 @@ using System.Reflection;
 namespace Sähköhinta_App
 {
 
-    
-    public partial class MainPage :TabbedPage
-    {        
+
+    public partial class MainPage : TabbedPage
+    {
         // voiko nää tehdä selkeämmin?
         StringBuilder sb = new StringBuilder();
         StringBuilder sb2 = new StringBuilder();
@@ -32,6 +32,8 @@ namespace Sähköhinta_App
         String todayHour = DateTime.Now.ToString("M/d/yyyy HH");
         String todayHourCorrected = DateTime.Now.AddHours(3).ToString("M/d/yyyy HH");
         String todayHour2 = DateTime.Now.ToFormat24h();
+
+
         
         public MainPage()
         {           
@@ -191,7 +193,7 @@ namespace Sähköhinta_App
             var prices = jsonObject["prices"];
             var jsonArray = JArray.Parse(prices.ToString());
 
-            //siirrä päivämäärät ylös?
+            //siirrä päivämäärät ylös? kopioi alta huomisen päivämäärät helposti?
             DateTime startDateTime = DateTime.Today; //Today at 00:00:00
             DateTime endDateTime = DateTime.Today.AddDays(1).AddTicks(-1); //Today at 23:59:59
 
@@ -213,9 +215,10 @@ namespace Sähköhinta_App
             //monthlyAvg = prixe.Where(x => x.date.Month == DateTime.Today.Month).Average(x => x.value);
             //Console.WriteLine($"This month's average is: {monthlyAvg}");
 
-            //double dailyAvg = 0;
-            //dailyAvg = prixe.Where(x => x.date.Day == DateTime.Today.Day).Average(x => x.value);
-            //Console.WriteLine($"Today's average is: {dailyAvg}");
+            double dailyAvg = 0;
+            dailyAvg = prixe.Where(x => x.date >= startDateTime && x.date <= endDateTime).Average(x => x.value);
+            Console.WriteLine($"Today's average is: {dailyAvg}");
+            avgTodayPrice.Text = (dailyAvg/10).ToString("F") + " c/kWh";
 
             //TÄMÄ TÄMÄ TÄMÄ
             //TÄLLÄ SAA LISTATTUA AINAKIN KONSOLIIN MITÄ HALUAA MODAA TÄTÄ JA TÄN ALTA KAIKKI FUCK YEAH
@@ -292,8 +295,7 @@ namespace Sähköhinta_App
             sb.Clear();
             sb2.Clear();
             sb3.Clear();
-            GetJsonAsync();
-            //GetJsonAsyncModel();
+            GetJsonAsyncOC();  
         }
     }
 
