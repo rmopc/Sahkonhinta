@@ -58,7 +58,7 @@
                     <Label x:Name="avgTomorrowPrice" FontSize="18"  Text="Tietoja haetaan..."/>
                 </StackLayout>-->
                 <Button x:Name="pricesTodayButton" Text="Hinnat tänään" IsVisible="False" Clicked="pricesTodayButton_Clicked"/>
-                <Button x:Name="pricesTomorrowButton" Text="Hinnat huomenna"  Clicked="pricesTomorrowButton_Clicked"/>
+                <Button x:Name="pricesTomorrowButton" Text="Hinnat huomenna"  IsVisible="False" Clicked="pricesTomorrowButton_Clicked"/>
                 <Button x:Name="reloadButton" Text="Päivitä näkymä" Clicked="reloadButton_Clicked" CornerRadius="5" Padding="10"/>
 
                 <Label x:Name="priceFieldLabel" Text="Hinnat tänään" FontSize="24" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Light=Black, Dark=Gray}"/>
@@ -70,10 +70,10 @@
                             <TextCell Text="{Binding date, StringFormat='{0: klo HH:00}'}" Detail="{Binding value, StringFormat='{}{0:,0.00 c/kWh}'}" TextColor="{AppThemeBinding Light=Black, Dark=Gray}"  DetailColor="Red"/>
                         </DataTemplate>
                     </ListView.ItemTemplate>
-                    <!--<ListView.Header>
-                        --><!--Tee tästä nappula?--><!--
+                    <ListView.Header>
+                        <!--Tee tästä nappula?-->
                         <Label x:Name="listLabel" Text="Hinnat alv 0%"  TextColor="Black" FontSize="12"/>
-                    </ListView.Header>-->
+                    </ListView.Header>
             </ListView>
                 <ListView 
                 x:Name="priceListViewTomorrow" Margin="3" RowHeight="40" IsVisible="false"

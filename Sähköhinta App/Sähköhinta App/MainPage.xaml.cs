@@ -18,8 +18,6 @@ namespace Sähköhinta_App
 {
     public partial class MainPage : TabbedPage
     {
-        StringBuilder sb = new StringBuilder();
-       
         DateTime today = DateTime.Today;
         String todayHour = DateTime.Now.AddHours(-4).ToString("M/d/yyyy HH"); //muunnetaan CET-ajasta Suomen aikaan
 
@@ -62,7 +60,7 @@ namespace Sähköhinta_App
             //Vuorokauden korkein hinta
             var dailyMax = pricelist.Max(x => x.value);
             //var dailyMaxTomorrow = pricelistTomorrow.Max(x => x.value);
-            highPrice.Text = (dailyMax/10 * taxPercentage).ToString() + " c/kWh";
+            highPrice.Text = (dailyMax/10 * taxPercentage).ToString("F") + " c/kWh";
             //if (isToday == false)
             //{
             //    highPrice.Text = (dailyMaxTomorrow / 10).ToString() + " c/kWh";
@@ -70,7 +68,7 @@ namespace Sähköhinta_App
 
             //Vuorokauden alin hinta
             var dailyMin = pricelist.Min(x => x.value);
-            lowPrice.Text = (dailyMin/ 10 * taxPercentage).ToString() + " c/kWh";
+            lowPrice.Text = (dailyMin/ 10 * taxPercentage).ToString("F") + " c/kWh";
 
             //Vuorokauden keskihinta                                                                                                                                                            
             double dailyAvg = 0;
@@ -141,7 +139,6 @@ namespace Sähköhinta_App
         {
             priceFieldNow.Text = "Päivitetään...";
             //priceFieldToday.Text = "";
-            sb.Clear(); //poistoon?
             GetJsonAsyncOC();  
         }
 
@@ -151,6 +148,7 @@ namespace Sähköhinta_App
             tax00.IsEnabled = false; 
             tax14.IsEnabled = true;
             tax22.IsEnabled = true;
+            listLabel.Text = "Hinnat alv 0%";
         }
 
         private void tax14_Clicked(object sender, EventArgs e)
@@ -160,6 +158,7 @@ namespace Sähköhinta_App
             tax00.IsEnabled = true;
             tax14.IsEnabled = false;
             tax22.IsEnabled = true;
+            listLabel.Text = "Hinnat alv 14%";
         }
 
         private void tax22_Clicked(object sender, EventArgs e)
@@ -168,6 +167,7 @@ namespace Sähköhinta_App
             tax00.IsEnabled = true;
             tax14.IsEnabled = true;
             tax22.IsEnabled = false;
+            listLabel.Text = "Hinnat alv 22%";
         }
     }
 }
