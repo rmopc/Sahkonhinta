@@ -1,17 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Xamarin.Forms;
 using Newtonsoft.Json;
-using System.Net;
 using System.Net.Http;
 using Newtonsoft.Json.Linq;
-using System.Diagnostics;
 using System.Collections.ObjectModel;
-using System.Reflection;
 using Xamarin.Essentials;
 
 namespace Sähköhinta_App
@@ -19,7 +13,8 @@ namespace Sähköhinta_App
     public partial class MainPage : TabbedPage
     {
         DateTime today = DateTime.Today;
-        String todayHour = DateTime.Now.AddHours(-4).ToString("M/d/yyyy HH"); //muunnetaan CET-ajasta Suomen aikaan
+        //String todayHour = DateTime.Now.AddHours(-4).ToString("M/d/yyyy HH"); //muunnetaan CET-ajasta Suomen aikaan, ei toimi puhelimella enää oikein?
+        String todayHour = DateTime.Now.ToString("M/d/yyyy HH"); //muunnetaan CET-ajasta Suomen aikaan
 
         double taxPercentage = 1;
         //float tomorrowDivider = 10.0f;
@@ -147,7 +142,7 @@ namespace Sähköhinta_App
             taxPercentage = 1;
             tax00.IsEnabled = false; 
             tax14.IsEnabled = true;
-            tax22.IsEnabled = true;
+            tax24.IsEnabled = true;
             listLabel.Text = "Hinnat alv 0%";
         }
 
@@ -157,17 +152,17 @@ namespace Sähköhinta_App
             taxPercentage = 1.14;
             tax00.IsEnabled = true;
             tax14.IsEnabled = false;
-            tax22.IsEnabled = true;
+            tax24.IsEnabled = true;
             listLabel.Text = "Hinnat alv 14%";
         }
 
-        private void tax22_Clicked(object sender, EventArgs e)
+        private void tax24_Clicked(object sender, EventArgs e)
         {
             taxPercentage = 1.24;
             tax00.IsEnabled = true;
             tax14.IsEnabled = true;
-            tax22.IsEnabled = false;
-            listLabel.Text = "Hinnat alv 22%";
+            tax24.IsEnabled = false;
+            listLabel.Text = "Hinnat alv 24%";
         }
     }
 }

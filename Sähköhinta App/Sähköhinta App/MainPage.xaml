@@ -72,7 +72,7 @@
                     </ListView.ItemTemplate>
                     <ListView.Header>
                         <!--Tee tästä nappula?-->
-                        <Label x:Name="listLabel" Text="Hinnat alv 0%"  TextColor="Black" FontSize="12"/>
+                        <Label x:Name="listLabel" Text="Hinnat alv 0%"  TextColor="{AppThemeBinding Light=Black, Dark=Gray}" FontSize="12"/>
                     </ListView.Header>
             </ListView>
                 <ListView 
@@ -115,17 +115,18 @@
             </Style>
 
         </ContentPage.Resources>
-        <StackLayout>
+        <StackLayout BackgroundColor="{AppThemeBinding Light={StaticResource LightPrimaryColor}, Dark={StaticResource DarkPrimaryColor}}">
             <Frame BackgroundColor="{AppThemeBinding Light={StaticResource LightPrimaryColor}, Dark={StaticResource DarkPrimaryColor}}"  Padding="5" CornerRadius="5">
                 <Label Text="Asetukset" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Light=Black, Dark=Gray}" FontSize="40"/>
             </Frame>
-            <Label Text="Tästä voit valita laskennassa sovellettavan ALV-prosentin. Muista päivittää näkymä prosentin valinnan jälkeen." HorizontalTextAlignment="Center"/>
+            <Label Text="Tästä voit valita laskennassa sovellettavan ALV-prosentin. Muista päivittää näkymä prosentin valinnan jälkeen." 
+                   HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Light=Black, Dark=Gray}"/>
 
             <Label Text="Valitse ALV:" HorizontalOptions="Center"/>
             <StackLayout Orientation="Horizontal" HorizontalOptions="Center" >
                 <Button x:Name="tax00" Text="ALV 0%" Clicked="tax00_Clicked" IsEnabled="False"></Button>
                 <Button x:Name="tax14" Text="ALV 14%" Clicked="tax14_Clicked"></Button>
-                <Button x:Name="tax22" Text="ALV 22%" Clicked="tax22_Clicked"></Button>
+                <Button x:Name="tax24" Text="ALV 24%" Clicked="tax24_Clicked"></Button>
             </StackLayout>
             <Button x:Name="settingsReloadButton" Text="Päivitä näkymä" Clicked="reloadButton_Clicked"/>
             <StackLayout VerticalOptions="EndAndExpand">
