@@ -18,7 +18,7 @@
             <Color x:Key="LightSecondaryColor">Black</Color>
 
             <!-- Dark colors -->
-            <Color x:Key="DarkPrimaryColor">Black</Color>
+            <Color x:Key="DarkPrimaryColor">#1A1D26</Color>
             <Color x:Key="DarkSecondaryColor">WhiteSmoke</Color>
 
             <Style x:Key="ButtonStyle"
@@ -44,7 +44,7 @@
                     <Label x:Name="avgLabel" FontSize="18" Text="Keskihinta tänään:" TextColor="{AppThemeBinding Light=Black, Dark=Gray}"/>
                     <Label x:Name="avgPrice" FontSize="18"  Text="Tietoja haetaan..." TextColor="{AppThemeBinding Light=Black, Dark=Gray}"/>                   
                 </StackLayout>
-                <Frame BackgroundColor="{AppThemeBinding Light=WhiteSmoke, Dark=Black}">
+                <Frame BackgroundColor="{AppThemeBinding Light={StaticResource LightPrimaryColor}, Dark={StaticResource DarkPrimaryColor}}">
                     <StackLayout Orientation="Horizontal" HorizontalOptions="Center" >
                         <Label x:Name="lowLabel" FontSize="14" Text="Halvin hinta:" TextColor="{AppThemeBinding Light=Black, Dark=Gray}"/>
                         <Label x:Name="lowPrice" FontSize="15"  Text="Tietoja haetaan..." TextColor="Green"/>
@@ -80,7 +80,7 @@
                 SeparatorVisibility="None" >
                     <ListView.ItemTemplate >
                         <DataTemplate  >
-                            <TextCell Text="{Binding date, StringFormat='{0: klo HH:00}'}" Detail="{Binding value, StringFormat='{}{0:,0.00 c/kWh}'}"  TextColor="{AppThemeBinding Light=Black, Dark=Gray}"  DetailColor="Red"/>
+                            <TextCell Text="{Binding date, StringFormat='{0: klo HH:00}'}" Detail="{Binding value, StringFormat='{}{0:,0.00 €/MWh}'}" TextColor="{AppThemeBinding Light=Black, Dark=Gray}"  DetailColor="Red"/>
                         </DataTemplate>
                     </ListView.ItemTemplate>
                     <!--<ListView.Header>
@@ -103,7 +103,7 @@
             <Color x:Key="LightSecondaryColor">Black</Color>
 
             <!-- Dark colors -->
-            <Color x:Key="DarkPrimaryColor">Black</Color>
+            <Color x:Key="DarkPrimaryColor">#1A1D26</Color>
             <Color x:Key="DarkSecondaryColor">WhiteSmoke</Color>
 
             <Style x:Key="ButtonStyle"
@@ -122,7 +122,7 @@
             <Label Text="Tästä voit valita laskennassa sovellettavan ALV-prosentin. Muista päivittää näkymä prosentin valinnan jälkeen." 
                    HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Light=Black, Dark=Gray}"/>
 
-            <Label Text="Valitse ALV:" HorizontalOptions="Center"/>
+            <Label Text="Valitse ALV:" HorizontalOptions="Center" TextColor="{AppThemeBinding Light=Black, Dark=Gray}"/>
             <StackLayout Orientation="Horizontal" HorizontalOptions="Center" >
                 <Button x:Name="tax00" Text="ALV 0%" Clicked="tax00_Clicked" IsEnabled="False"></Button>
                 <Button x:Name="tax14" Text="ALV 14%" Clicked="tax14_Clicked"></Button>
@@ -130,7 +130,8 @@
             </StackLayout>
             <Button x:Name="settingsReloadButton" Text="Päivitä näkymä" Clicked="reloadButton_Clicked"/>
             <StackLayout VerticalOptions="EndAndExpand">
-                <Label Text="Ⓒ Ronie Oljemark 2022" HorizontalTextAlignment="Center"/>
+                <Label Text="Ⓒ Ronie Oljemark 2022" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Light=Black, Dark=Gray}"/>
+                
             </StackLayout>
         </StackLayout>
     </ContentPage>
