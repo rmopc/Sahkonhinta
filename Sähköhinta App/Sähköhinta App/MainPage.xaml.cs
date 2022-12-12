@@ -16,6 +16,7 @@ namespace Sähköhinta_App
         //String todayHour = DateTime.Now.AddHours(-4).ToString("M/d/yyyy HH"); //muunnetaan CET-ajasta Suomen aikaan, ei toimi puhelimella enää oikein?
         String todayHour = DateTime.Now.ToString("M/d/yyyy HH"); //muunnetaan CET-ajasta Suomen aikaan
 
+        double divider = 10;
         double taxPercentage = 1;
         //float tomorrowDivider = 10.0f;
                 
@@ -30,7 +31,7 @@ namespace Sähköhinta_App
         {
             HttpClient httpClient = new HttpClient();
             
-            var uri = new Uri("https://pakastin.fi/hinnat/prices");            
+            var uri = new Uri("https://sahkotin.fi/prices");            
             string json = await httpClient.GetStringAsync(uri);
 
             var jsonObject = JObject.Parse(json);
@@ -92,7 +93,9 @@ namespace Sähköhinta_App
 
                     foreach (var row in rowsTomorrow)
                     {
-                        row.value = row.value * taxPercentage;
+                        decimal rowv = Convert.ToDecimal(row.value);
+                        decimal result = rowv * 1 / 10;                        
+                        row.value = Convert.ToDouble(result);
                     }
 
                     priceListViewTomorrow.ItemsSource = pricedata.Where(x => x.date >= startDateTimeTomorrow && x.date <= endDateTimeTomorrow);
@@ -101,11 +104,14 @@ namespace Sähköhinta_App
 
             //Kaikki tämän päivän hinnat
             var rows = from row in pricedata.Where(x => x.date >= startDateTime && x.date <= endDateTime)
-                       select row;
+                       select row;            
 
             foreach (var row in rows)
             {
-                row.value = row.value/10 * taxPercentage;
+                //decimal rowv = Convert.ToDecimal(row.value);
+                //decimal result = rowv / 10;
+                //row.value = (double)result;
+                row.value = row.value / divider * taxPercentage;
             }
             priceListView.ItemsSource = pricedata.Where(x => x.date >= startDateTime && x.date <= endDateTime);
 
@@ -141,26 +147,26 @@ namespace Sähköhinta_App
         {
             taxPercentage = 1;
             tax00.IsEnabled = false; 
-            tax14.IsEnabled = true;
+            tax10.IsEnabled = true;
             tax24.IsEnabled = true;
             listLabel.Text = "Hinnat alv 0%";
         }
 
-        private void tax14_Clicked(object sender, EventArgs e)
+        private void tax10_Clicked(object sender, EventArgs e)
         {
             
-            taxPercentage = 1.14;
+            taxPercentage = 1.10;
             tax00.IsEnabled = true;
-            tax14.IsEnabled = false;
+            tax10.IsEnabled = false;
             tax24.IsEnabled = true;
-            listLabel.Text = "Hinnat alv 14%";
+            listLabel.Text = "Hinnat alv 10%";
         }
 
         private void tax24_Clicked(object sender, EventArgs e)
         {
             taxPercentage = 1.24;
             tax00.IsEnabled = true;
-            tax14.IsEnabled = true;
+            tax10.IsEnabled = true;
             tax24.IsEnabled = false;
             listLabel.Text = "Hinnat alv 24%";
         }
