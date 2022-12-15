@@ -88,14 +88,24 @@ namespace Sähköhinta_App
                     //Tarkistetaan samalla jos huomisen hinnat näkyy
                     if (date.ToShortDateString().Contains(today.AddDays(1).ToShortDateString()))
                     {
-                        pricesTomorrowButton.IsEnabled = true;
-                        
-                        var rowsTomorrow = pricedata.Where(x => x.date >= startDateTimeTomorrow && x.date <= endDateTimeTomorrow)
-                                                    .Select(x => new
-                                                    {
-                                                        x.date,
-                                                        value = x.value / 10 * taxPercentage
-                                                    });
+                        pricesTomorrowButton.IsEnabled = true;                   
+
+                        //Luodaan muuttuja joka sisältää kaikki huomisen vuorokaude tunnit           
+                        var hoursTomorrow = Enumerable.Range(0, 24).Select(i => startDateTimeTomorrow.AddHours(i));
+
+                        //Koska aikaa säädetään kahdella tunnilla eteenpäin, luodaan lisäksi muutuja joka sisältää vuorokauden kaksi ensimmäistä tuntia            
+                        var hoursFirstTwoTomorrow = Enumerable.Range(-2, 2).Select(i => startDateTimeTomorrow.AddHours(i));
+
+                        //Liitetään kummankin muuttujan tunnit yhteen            
+                        hoursTomorrow = hoursTomorrow.Union(hoursFirstTwoTomorrow);
+
+                        // Kaikki huomisen tunnit
+                        var rowsTomorrow = pricedata.Where(x => hoursTomorrow.Contains(x.date))
+                                                .Select(x => new
+                                                {
+                                                    date = x.date.AddHours(2),
+                                                    value = x.value / 10 * taxPercentage
+                                                });
 
                         priceListViewTomorrow.ItemsSource = rowsTomorrow;
                     }
