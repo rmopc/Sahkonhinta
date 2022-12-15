@@ -35,7 +35,6 @@ namespace Sähköhinta_App
             var prices = jsonObject["prices"];
             var jsonArray = JArray.Parse(prices.ToString());
             
-            //DateTime startDateTime = DateTime.Today.AddHours(-2); //Tänään klo 00:00:00 mutta muutettuna Suomen aikaan
             DateTime startDateTime = DateTime.Today; //Tänään klo 00:00:00
             DateTime endDateTime = DateTime.Today.AddDays(1).AddTicks(-1); //Tänään klo 23:59:59
 
@@ -103,13 +102,22 @@ namespace Sähköhinta_App
                 }
             }
 
-            //Kaikki tämän päivän hinnat
-            var rowsToday = pricedata.Where(x => x.date >= startDateTime && x.date <= endDateTime)
-                                .Select(x => new
-                                {
-                                    x.date,
-                                    value = x.value / 10 * taxPercentage
-                                });
+            //Luodaan muuttuja joka sisältää kaikki vuodokauden tunnit           
+            var hours = Enumerable.Range(0, 24).Select(i => startDateTime.AddHours(i));
+
+            //Koska aikaa säädetään kahdella tunnilla eteenpäin, luodaan lisäksi muutuja joka sisältää vuorokauden kaksi ensimmäistä tuntia            
+            var hoursFirstTwo = Enumerable.Range(-2, 2).Select(i => startDateTime.AddHours(i));
+
+            //Liitetään kummankin muuttujan tunnit yhteen            
+            hours = hours.Union(hoursFirstTwo);
+
+            // Kaikki vuorokauden tunnit
+            var rowsToday = pricedata.Where(x => hours.Contains(x.date))
+                                    .Select(x => new
+                                    {                                        
+                                        date = x.date.AddHours(2),
+                                        value = x.value / 10 * taxPercentage
+                                    });
 
             priceListView.ItemsSource = rowsToday;
         }
