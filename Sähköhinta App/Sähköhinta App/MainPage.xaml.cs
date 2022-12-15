@@ -13,7 +13,7 @@ namespace Sähköhinta_App
     public partial class MainPage : TabbedPage
     {
         DateTime today = DateTime.Today;
-        String todayHour = DateTime.Now.ToString("M/d/yyyy HH"); //muunnetaan CET-ajasta Suomen aikaan
+        String todayHour = DateTime.Now.AddHours(-2).ToString("M/d/yyyy HH"); //muunnetaan CET-ajasta Suomen aikaan
 
         double taxPercentage = 1;
                 
@@ -35,6 +35,7 @@ namespace Sähköhinta_App
             var prices = jsonObject["prices"];
             var jsonArray = JArray.Parse(prices.ToString());
             
+            //DateTime startDateTime = DateTime.Today.AddHours(-2); //Tänään klo 00:00:00 mutta muutettuna Suomen aikaan
             DateTime startDateTime = DateTime.Today; //Tänään klo 00:00:00
             DateTime endDateTime = DateTime.Today.AddDays(1).AddTicks(-1); //Tänään klo 23:59:59
 
