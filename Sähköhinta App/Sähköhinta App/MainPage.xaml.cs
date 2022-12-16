@@ -7,6 +7,7 @@ using System.Net.Http;
 using Newtonsoft.Json.Linq;
 using System.Collections.ObjectModel;
 using Xamarin.Essentials;
+using System.Threading.Tasks;
 
 namespace Sähköhinta_App
 {
@@ -157,32 +158,53 @@ namespace Sähköhinta_App
             GetJsonAsyncOC();  
         }
 
-        private void tax00_Clicked(object sender, EventArgs e)
+        private async void tax00_Clicked(object sender, EventArgs e)
         {
+            settingsStatus.IsVisible = true;
             taxPercentage = 1;
             tax00.IsEnabled = false; 
             tax10.IsEnabled = true;
             tax24.IsEnabled = true;
-            listLabel.Text = listLabelTomorrow.Text = "Hinnat alv 0%";
+            taxLabel.Text  = "Kaikki hinnat alv 0%";
+            GetJsonAsyncOC();
+
+            await Wait();
+            settingsStatus.IsVisible = false;
+            CurrentPage = Children.First(x => x.Title == "HINNAT");
         }
 
-        private void tax10_Clicked(object sender, EventArgs e)
+        private async void tax10_Clicked(object sender, EventArgs e)
         {
-            
+            settingsStatus.IsVisible = true;
             taxPercentage = 1.10;
             tax00.IsEnabled = true;
             tax10.IsEnabled = false;
             tax24.IsEnabled = true;
-            listLabel.Text = listLabelTomorrow.Text =  "Hinnat alv 10%";
+            taxLabel.Text =  "Kaikki hinnat alv 10%";
+            GetJsonAsyncOC();
+
+            await Wait();
+            settingsStatus.IsVisible = false;
+            CurrentPage = Children.First(x => x.Title == "HINNAT");
         }
 
-        private void tax24_Clicked(object sender, EventArgs e)
+        private async void tax24_Clicked(object sender, EventArgs e)
         {
+            settingsStatus.IsVisible = true;
             taxPercentage = 1.24;
             tax00.IsEnabled = true;
             tax10.IsEnabled = true;
             tax24.IsEnabled = false;
-            listLabel.Text = listLabelTomorrow.Text = "Hinnat alv 24%";
+            taxLabel.Text = "Kaikki hinnat alv 24%";           
+            GetJsonAsyncOC();
+
+            await Wait();
+            settingsStatus.IsVisible = false;
+            CurrentPage = Children.First(x => x.Title == "HINNAT");
+        }
+        private Task Wait()
+        {
+            return Task.Delay(500);
         }
     }
 }
