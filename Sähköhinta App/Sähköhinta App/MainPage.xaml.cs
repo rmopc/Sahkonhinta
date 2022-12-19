@@ -92,7 +92,7 @@ namespace Sähköhinta_App
                         pricesTomorrowButton.IsEnabled = true;                   
 
                         //Luodaan muuttuja joka sisältää kaikki huomisen vuorokaude tunnit           
-                        var hoursTomorrow = Enumerable.Range(0, 24).Select(i => startDateTimeTomorrow.AddHours(i));
+                        var hoursTomorrow = Enumerable.Range(0, 23).Select(i => startDateTimeTomorrow.AddHours(i));
 
                         //Koska aikaa säädetään kahdella tunnilla eteenpäin, luodaan lisäksi muutuja joka sisältää vuorokauden kaksi ensimmäistä tuntia            
                         var hoursFirstTwoTomorrow = Enumerable.Range(-2, 2).Select(i => startDateTimeTomorrow.AddHours(i));
@@ -114,7 +114,7 @@ namespace Sähköhinta_App
             }
 
             //Luodaan muuttuja joka sisältää kaikki vuodokauden tunnit           
-            var hours = Enumerable.Range(0, 24).Select(i => startDateTime.AddHours(i));
+            var hours = Enumerable.Range(0, 23).Select(i => startDateTime.AddHours(i));
 
             //Koska aikaa säädetään kahdella tunnilla eteenpäin, luodaan lisäksi muutuja joka sisältää vuorokauden kaksi ensimmäistä tuntia            
             var hoursFirstTwo = Enumerable.Range(-2, 2).Select(i => startDateTime.AddHours(i));
@@ -135,8 +135,6 @@ namespace Sähköhinta_App
 
         private void pricesTomorrowButton_Clicked(object sender, EventArgs e)
         {            
-            //pricesTodayButton.IsVisible = true;
-            //pricesTomorrowButton.IsVisible = false;
             priceFieldLabel.Text = "Hinnat huomenna";
             priceListView.IsVisible= false;
             priceListViewTomorrow.IsVisible = true;
@@ -144,8 +142,6 @@ namespace Sähköhinta_App
 
         private void pricesTodayButton_Clicked(object sender, EventArgs e)
         {
-            //pricesTomorrowButton.IsVisible = true;
-            //pricesTodayButton.IsVisible = false;
             priceFieldLabel.Text = "Hinnat tänään";
             priceListView.IsVisible = true;
             priceListViewTomorrow.IsVisible = false;
@@ -158,53 +154,42 @@ namespace Sähköhinta_App
             GetJsonAsyncOC();  
         }
 
-        private async void tax00_Clicked(object sender, EventArgs e)
-        {
-            settingsStatus.IsVisible = true;
-            taxPercentage = 1;
-            tax00.IsEnabled = false; 
-            tax10.IsEnabled = true;
-            tax24.IsEnabled = true;
-            taxLabel.Text  = "Kaikki hinnat alv 0%";
-            GetJsonAsyncOC();
-
-            await Wait();
-            settingsStatus.IsVisible = false;
-            CurrentPage = Children.First(x => x.Title == "HINNAT");
-        }
-
-        private async void tax10_Clicked(object sender, EventArgs e)
-        {
-            settingsStatus.IsVisible = true;
-            taxPercentage = 1.10;
-            tax00.IsEnabled = true;
-            tax10.IsEnabled = false;
-            tax24.IsEnabled = true;
-            taxLabel.Text =  "Kaikki hinnat alv 10%";
-            GetJsonAsyncOC();
-
-            await Wait();
-            settingsStatus.IsVisible = false;
-            CurrentPage = Children.First(x => x.Title == "HINNAT");
-        }
-
-        private async void tax24_Clicked(object sender, EventArgs e)
-        {
-            settingsStatus.IsVisible = true;
-            taxPercentage = 1.24;
-            tax00.IsEnabled = true;
-            tax10.IsEnabled = true;
-            tax24.IsEnabled = false;
-            taxLabel.Text = "Kaikki hinnat alv 24%";           
-            GetJsonAsyncOC();
-
-            await Wait();
-            settingsStatus.IsVisible = false;
-            CurrentPage = Children.First(x => x.Title == "HINNAT");
-        }
         private Task Wait()
         {
             return Task.Delay(500);
+        }
+        
+        private async void tax_Clicked(object sender, EventArgs e)
+        {
+            Button button = (Button)sender;
+            string buttonText = button.Text;
+            settingsStatus.IsVisible = true;
+
+            tax00.IsEnabled = true;
+            tax10.IsEnabled = true;
+            tax24.IsEnabled = true;
+            button.IsEnabled = false;
+
+            if (buttonText == "ALV 0%")
+            {
+                taxPercentage = 1;
+                taxLabel.Text = "Kaikki hinnat alv 0%";
+            }
+            else if (buttonText == "ALV 10%")
+            {
+                taxPercentage = 1.10;
+                taxLabel.Text = "Kaikki hinnat alv 10%";
+            }
+            else if (buttonText == "ALV 24%")
+            {
+                taxPercentage = 1.24;
+                taxLabel.Text = "Kaikki hinnat alv 24%";
+            }
+
+            GetJsonAsyncOC();
+            await Wait();
+            settingsStatus.IsVisible = false;
+            CurrentPage = Children.First(x => x.Title == "HINNAT");
         }
     }
 }
