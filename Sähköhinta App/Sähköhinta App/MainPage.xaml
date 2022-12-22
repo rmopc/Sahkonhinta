@@ -39,22 +39,31 @@
                     <Label Text="SähköSpot" HorizontalTextAlignment="Center" FontSize="60" TextColor="{AppThemeBinding Light=Black, Dark=Gray}"/>
             </Frame>
                 <Label x:Name="statusField" Text="tilaa päivitetään..." FontSize="16" Padding="30,0,30,0" HorizontalTextAlignment="Center"  TextColor="{AppThemeBinding Light=Black, Dark=Gray}"/>
-
                 <Label x:Name="priceFieldNow" Text="tietoja haetaan..." FontSize="18" Padding="30,0,30,0" HorizontalTextAlignment="Center"  TextColor="{AppThemeBinding Light=Black, Dark=Gray}"/>
 
                 <StackLayout Orientation="Horizontal" HorizontalOptions="Center" >
                     <Label x:Name="avgLabel" FontSize="18" Text="Keskihinta tänään:" TextColor="{AppThemeBinding Light=Black, Dark=Gray}"/>
-                    <Label x:Name="avgPrice" FontSize="18"  Text="Tietoja haetaan..." TextColor="{AppThemeBinding Light=Black, Dark=Gray}"/>                   
-
+                    <Label x:Name="avgPrice" FontSize="18"  Text="Tietoja haetaan..." TextColor="{AppThemeBinding Light=Black, Dark=Gray}"/>
+                    <Label x:Name="avgLabelTomorrow" FontSize="18" Text="Keskihinta huomenna:" TextColor="{AppThemeBinding Light=Black, Dark=Gray}" IsVisible="false"/>
+                    <Label x:Name="avgPriceTomorrow" FontSize="18"  Text="Tietoja haetaan..." TextColor="{AppThemeBinding Light=Black, Dark=Gray}" IsVisible="false"/>
                 </StackLayout>
+                
                 <Label x:Name="taxLabel" Text="Kaikki hinnat alv 0%"  HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Light=Black, Dark=Gray}" FontSize="12"/>
 
-                <Frame BackgroundColor="{AppThemeBinding Light={StaticResource LightPrimaryColor}, Dark={StaticResource DarkPrimaryColor}}" OutlineColor="Gray" Margin="10,5,10,10">
+                <Frame x:Name="countedPricesToday" BackgroundColor="{AppThemeBinding Light={StaticResource LightPrimaryColor}, Dark={StaticResource DarkPrimaryColor}}" OutlineColor="Gray" Margin="10,5,10,10">
                     <StackLayout Orientation="Horizontal" HorizontalOptions="Center" >
                         <Label x:Name="lowLabel" FontSize="16" Text="Alin tänään:" TextColor="{AppThemeBinding Light=Black, Dark=Gray}"/>
                         <Label x:Name="lowPrice" FontSize="16"  Text="Tietoja haetaan..." TextColor="Green"/>
                         <Label x:Name="highLabel" FontSize="16" Text="Ylin tänään:" TextColor="{AppThemeBinding Light=Black, Dark=Gray}"/>
                         <Label x:Name="highPrice" FontSize="16"  Text="Tietoja haetaan..." TextColor="Red"/>
+                    </StackLayout>
+                </Frame>
+                <Frame x:Name="countedPricesTomorrow" BackgroundColor="{AppThemeBinding Light={StaticResource LightPrimaryColor}, Dark={StaticResource DarkPrimaryColor}}" OutlineColor="Gray" Margin="10,5,10,10" IsVisible="false">
+                    <StackLayout Orientation="Horizontal" HorizontalOptions="Center" >
+                        <Label x:Name="lowLabelTomorrow" FontSize="16" Text="Alin huomenna:" TextColor="{AppThemeBinding Light=Black, Dark=Gray}"/>
+                        <Label x:Name="lowPriceTomorrow" FontSize="16"  Text="Tietoja haetaan..." TextColor="Green"/>
+                        <Label x:Name="highLabelTomorrow" FontSize="16" Text="Ylin huomenna:" TextColor="{AppThemeBinding Light=Black, Dark=Gray}"/>
+                        <Label x:Name="highPriceTomorrow" FontSize="16"  Text="Tietoja haetaan..." TextColor="Red"/>
                     </StackLayout>
                 </Frame>
 
