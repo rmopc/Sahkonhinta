@@ -23,127 +23,160 @@ namespace Sähköhinta_App
             InitializeComponent();
             GetJsonAsyncOC();
             statusField.IsVisible = false;
-        }  
-        
+        }
+
         async void GetJsonAsyncOC()
         {
             HttpClient httpClient = new HttpClient();
-            
-            var uri = new Uri("https://sahkotin.fi/prices");            
-            string json = await httpClient.GetStringAsync(uri);
+            var uri = new Uri("https://sahkotin.fi/prices");
 
-            var jsonObject = JObject.Parse(json);
-            var prices = jsonObject["prices"];
-            var jsonArray = JArray.Parse(prices.ToString());
-            
-            DateTime startDateTime = DateTime.Today; //Tänään klo 00:00:00
-            DateTime endDateTime = DateTime.Today.AddDays(1).AddTicks(-1); //Tänään klo 23:59:59
+            try
+            {
+                HttpResponseMessage response = await httpClient.GetAsync(uri);
+                response.EnsureSuccessStatusCode();
+                string responseBody = await response.Content.ReadAsStringAsync();
 
-            DateTime startDateTimeTomorrow = DateTime.Today.AddDays(1); //Huomenna klo 00:00:00
-            DateTime endDateTimeTomorrow = DateTime.Today.AddDays(2).AddTicks(-1); //Huomenna klo 23:59:59
+                string json = await httpClient.GetStringAsync(uri);
 
-            List<Price> pricelist = JsonConvert.DeserializeObject<List<Price>>(jsonArray.ToString());
+                var jsonObject = JObject.Parse(json);
+                var prices = jsonObject["prices"];
+                var jsonArray = JArray.Parse(prices.ToString());
 
-            ObservableCollection<Price> pricedata = new ObservableCollection<Price>(pricelist);            
+                DateTime startDateTime = DateTime.Today; //Tänään klo 00:00:00
+                DateTime endDateTime = DateTime.Today.AddDays(1).AddTicks(-1); //Tänään klo 23:59:59
 
-            //haetaan päivän hinnat jotta voidaan laskea keskiarvot ja näyttää ylin/alin
-            pricelist = pricelist.Where(x => x.date >=startDateTime && x.date<= endDateTime).ToList();
+                DateTime startDateTimeTomorrow = DateTime.Today.AddDays(1); //Huomenna klo 00:00:00
+                DateTime endDateTimeTomorrow = DateTime.Today.AddDays(2).AddTicks(-1); //Huomenna klo 23:59:59
 
-            //haetaan huomisen hinnat jotta voidaan laskea keskiarvot ja näyttää ylin/alin
-            var pricelistTomorrow = pricelist.Where(x => x.date >= startDateTimeTomorrow && x.date <= endDateTimeTomorrow).ToList();
+                List<Price> pricelist = JsonConvert.DeserializeObject<List<Price>>(jsonArray.ToString());
+                List<Price> pricelistTomorrow = JsonConvert.DeserializeObject<List<Price>>(jsonArray.ToString());
 
-            //Vuorokauden ylin, alin ja keskihinta sekä niiden asetus tekstikenttiin
-            var dailyMax = pricelist.Max(x => x.value);
-            highPrice.Text = (dailyMax / 10 * taxPercentage).ToString("F") + " c/kWh";
+                ObservableCollection<Price> pricedata = new ObservableCollection<Price>(pricelist);
 
-            var dailyMin = pricelist.Min(x => x.value);
-            lowPrice.Text = (dailyMin / 10 * taxPercentage).ToString("F") + " c/kWh";
-                                                                                                                                                  
-            double dailyAvg = 0;
-            dailyAvg = pricelist.Where(x => x.date >= startDateTime && x.date <= endDateTime).Average(x => x.value);
-            avgPrice.Text = (dailyAvg / 10 * taxPercentage).ToString("F") + " c/kWh";
+                //haetaan päivän hinnat jotta voidaan laskea keskiarvot ja näyttää ylin/alin
+                pricelist = pricelist.Where(x => x.date >= startDateTime && x.date <= endDateTime).ToList();
 
-            //Huomisen ylin, alin ja keskihinta
-            //var dailyMaxTomorrow = pricelistTomorrow.Max(x => x.value);
-            //var dailyMinTomorrow = pricelistTomorrow.Min(x => x.value);
+                //Vuorokauden ylin, alin ja keskihinta sekä niiden asetus tekstikenttiin
+                var dailyMax = pricelist.Max(x => x.value);
+                highPrice.Text = (dailyMax / 10 * taxPercentage).ToString("F") + " c/kWh";
 
-            //double dailyAvgTomorrow = 0;
-            //dailyAvgTomorrow = pricelistTomorrow.Where(x => x.date >= startDateTimeTomorrow && x.date <= endDateTimeTomorrow).Average(x => x.value);
+                var dailyMin = pricelist.Min(x => x.value);
+                lowPrice.Text = (dailyMin / 10 * taxPercentage).ToString("F") + " c/kWh";
 
+                double dailyAvg = 0;
+                dailyAvg = pricelist.Where(x => x.date >= startDateTime && x.date <= endDateTime).Average(x => x.value);
+                avgPrice.Text = (dailyAvg / 10 * taxPercentage).ToString("F") + " c/kWh";
 
-            foreach (var item in jsonArray)
-            {                
-                DateTime date;
-                if (DateTime.TryParse(item["date"].ToString(), out date))
-                {                    
-                    string displayDate = date.ToString("M/d/yyyy HH");
-
-                    //Tämänhetkinen hinta
-                    if (displayDate.Contains(todayHour))
+                foreach (var item in jsonArray)
+                {
+                    DateTime date;
+                    if (DateTime.TryParse(item["date"].ToString(), out date))
                     {
-                        string price = item["value"].ToString();
-                        double price2 = double.Parse(price);
-                        priceFieldNow.Text = "Hinta nyt: " + (price2 / 10 * taxPercentage).ToString("F") + " c/kWh";
-                    }
+                        string displayDate = date.ToString("M/d/yyyy HH");
 
-                    //Tarkistetaan samalla jos huomisen hinnat näkyy
-                    if (date.ToShortDateString().Contains(today.AddDays(1).ToShortDateString()))
-                    {
-                        pricesTomorrowButton.IsEnabled = true;                   
+                        //Tämänhetkinen hinta
+                        if (displayDate.Contains(todayHour))
+                        {
+                            string price = item["value"].ToString();
+                            double price2 = double.Parse(price);
+                            priceFieldNow.Text = "Hinta nyt: " + (price2 / 10 * taxPercentage).ToString("F") + " c/kWh";
+                        }
 
-                        //Luodaan muuttuja joka sisältää kaikki huomisen vuorokaude tunnit           
-                        var hoursTomorrow = Enumerable.Range(0, 23).Select(i => startDateTimeTomorrow.AddHours(i));
+                        //Tarkistetaan samalla jos huomisen hinnat näkyy
+                        if (date.ToShortDateString().Contains(today.AddDays(1).ToShortDateString()))
+                        {
+                            pricesTomorrowButton.IsEnabled = true;                            
 
-                        //Koska aikaa säädetään kahdella tunnilla eteenpäin, luodaan lisäksi muutuja joka sisältää vuorokauden kaksi ensimmäistä tuntia            
-                        var hoursFirstTwoTomorrow = Enumerable.Range(-2, 2).Select(i => startDateTimeTomorrow.AddHours(i));
+                            //Luodaan muuttuja joka sisältää kaikki huomisen vuorokauden tunnit           
+                            var hoursTomorrow = Enumerable.Range(0, 23).Select(i => startDateTimeTomorrow.AddHours(i));
 
-                        //Liitetään kummankin muuttujan tunnit yhteen            
-                        hoursTomorrow = hoursTomorrow.Union(hoursFirstTwoTomorrow);
+                            //Koska aikaa säädetään kahdella tunnilla eteenpäin, luodaan lisäksi muutuja joka sisältää vuorokauden kaksi ensimmäistä tuntia            
+                            var hoursFirstTwoTomorrow = Enumerable.Range(-2, 2).Select(i => startDateTimeTomorrow.AddHours(i));
 
-                        // Kaikki huomisen tunnit
-                        var rowsTomorrow = pricedata.Where(x => hoursTomorrow.Contains(x.date))
-                                                .Select(x => new
-                                                {
-                                                    date = x.date.AddHours(2),
-                                                    value = x.value / 10 * taxPercentage
-                                                });
+                            //Liitetään kummankin muuttujan tunnit yhteen            
+                            hoursTomorrow = hoursTomorrow.Union(hoursFirstTwoTomorrow);
 
-                        priceListViewTomorrow.ItemsSource = rowsTomorrow;
+                            // Kaikki huomisen tunnit
+                            var rowsTomorrow = pricedata.Where(x => hoursTomorrow.Contains(x.date))
+                                                    .Select(x => new
+                                                    {
+                                                        date = x.date.AddHours(2),
+                                                        value = x.value / 10 * taxPercentage
+                                                    });
+
+                            priceListViewTomorrow.ItemsSource = rowsTomorrow;
+
+
+                            //haetaan huomisen hinnat jotta voidaan laskea keskiarvot ja näyttää ylin/alin
+                            pricelistTomorrow = pricelistTomorrow.Where(x => x.date >= startDateTimeTomorrow && x.date <= endDateTimeTomorrow).ToList();
+
+                            //Huomisen ylin, alin ja keskihinta sekä niiden asetus tekstikenttiin
+                            var dailyMaxTomorrow = pricelistTomorrow.Max(x => x.value);
+                            highPriceTomorrow.Text = (dailyMaxTomorrow / 10 * taxPercentage).ToString("F") + " c/kWh";
+
+                            var dailyMinTomorrow = pricelistTomorrow.Min(x => x.value);
+                            lowPriceTomorrow.Text = (dailyMinTomorrow / 10 * taxPercentage).ToString("F") + " c/kWh";
+
+                            double dailyAvgTomorrow = 0;
+                            dailyAvgTomorrow = pricelistTomorrow.Where(x => x.date >= startDateTimeTomorrow && x.date <= endDateTimeTomorrow).Average(x => x.value);
+                            avgPriceTomorrow.Text = (dailyAvgTomorrow / 10 * taxPercentage).ToString("F") + " c/kWh";
+                        }
                     }
                 }
+
+                //Luodaan muuttuja joka sisältää kaikki vuodokauden tunnit           
+                var hours = Enumerable.Range(0, 23).Select(i => startDateTime.AddHours(i));
+
+                //Koska aikaa säädetään kahdella tunnilla eteenpäin, luodaan lisäksi muutuja joka sisältää vuorokauden kaksi ensimmäistä tuntia            
+                var hoursFirstTwo = Enumerable.Range(-2, 2).Select(i => startDateTime.AddHours(i));
+
+                //Liitetään kummankin muuttujan tunnit yhteen            
+                hours = hours.Union(hoursFirstTwo);
+
+                // Kaikki vuorokauden tunnit
+                var rowsToday = pricedata.Where(x => hours.Contains(x.date))
+                                        .Select(x => new
+                                        {
+                                            date = x.date.AddHours(2),
+                                            value = x.value / 10 * taxPercentage
+                                        });
+
+                priceListView.ItemsSource = rowsToday;
             }
 
-            //Luodaan muuttuja joka sisältää kaikki vuodokauden tunnit           
-            var hours = Enumerable.Range(0, 23).Select(i => startDateTime.AddHours(i));
-
-            //Koska aikaa säädetään kahdella tunnilla eteenpäin, luodaan lisäksi muutuja joka sisältää vuorokauden kaksi ensimmäistä tuntia            
-            var hoursFirstTwo = Enumerable.Range(-2, 2).Select(i => startDateTime.AddHours(i));
-
-            //Liitetään kummankin muuttujan tunnit yhteen            
-            hours = hours.Union(hoursFirstTwo);
-
-            // Kaikki vuorokauden tunnit
-            var rowsToday = pricedata.Where(x => hours.Contains(x.date))
-                                    .Select(x => new
-                                    {                                        
-                                        date = x.date.AddHours(2),
-                                        value = x.value / 10 * taxPercentage
-                                    });
-
-            priceListView.ItemsSource = rowsToday;
-        }
+            catch (HttpRequestException e)
+            {
+                await DisplayAlert("Virhe yhteydessä", e.Message.ToString(), "OK");
+            }
+        }            
 
         private void pricesTomorrowButton_Clicked(object sender, EventArgs e)
         {            
             priceFieldLabel.Text = "Hinnat huomenna";
+
+            avgLabel.IsVisible = false;
+            avgPrice.IsVisible = false;
+            countedPricesToday.IsVisible = false;
             priceListView.IsVisible= false;
+
+            avgLabelTomorrow.IsVisible=true;
+            avgPriceTomorrow.IsVisible=true;
+            countedPricesTomorrow.IsVisible=true;
             priceListViewTomorrow.IsVisible = true;
         }
 
         private void pricesTodayButton_Clicked(object sender, EventArgs e)
         {
             priceFieldLabel.Text = "Hinnat tänään";
+
+            avgLabel.IsVisible = true;
+            avgPrice.IsVisible = true;
+            countedPricesToday.IsVisible = true;
             priceListView.IsVisible = true;
+
+            avgLabelTomorrow.IsVisible = false;
+            avgPriceTomorrow.IsVisible = false;
+            countedPricesTomorrow.IsVisible = false;
             priceListViewTomorrow.IsVisible = false;
         }
 
