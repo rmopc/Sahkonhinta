@@ -10,6 +10,6 @@ Planned features: <br />
 -Widget and/or alarm-notification  <br /> 
 
 
-<img src="https://github.com/rmopc/Sahkonhinta/blob/master/Screenshot_20230109-145613.jpg" width=606 height=1280>
+<img src="https://github.com/rmopc/Sahkonhinta/blob/master/Screenshot_20230109-145613.jpg" width=910 height=1920>
 ![alt text](https://github.com/rmopc/Sahkonhinta/blob/master/Screenshot_20230109-145651.jpg?raw=true)
 
