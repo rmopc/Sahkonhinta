@@ -11,4 +11,5 @@ Planned features: <br />
 
 
 ![alt text](https://github.com/rmopc/Sahkonhinta/blob/master/Screenshot_20230109-145613.jpg?raw=true)
-![Screenshot](https://github.com/rmopc/Sahkonhinta/blob/master/Screenshot_20230109-145613.jpg)
+![alt text](https://github.com/rmopc/Sahkonhinta/blob/master/Screenshot_20230109-145651.jpg?raw=true)
+
