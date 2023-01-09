@@ -8,3 +8,6 @@ Planned features: <br />
 -Spot-provision as a separate field, said provision to be optionaly added to the hourly prices  <br /> 
 -Datepicker for selecting prices for any day in the past  <br /> 
 -Widget and/or alarm-notification  <br /> 
+
+
+![alt text](https://github.com/rmopc/Sahkonhinta/blob/master/Screenshot_20230109-145613.jpg?raw=true)
