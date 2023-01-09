@@ -4,7 +4,7 @@ As part of my education I developed a mobile app for Andrdoid with the purpose o
 
 The app features the current hourly price, daily high/low and daily average prices as well as hourly prices as a list for the current day. The user may select the VAT-percentage to be displayed. The app responds to dark-mode aswell as light-mode.
 
-Planned features:
--Spot-provision as a separate field, said provision to be optionaly added to the hourly prices
--Datepicker for selecting prices for any day in the past
--Widget and/or alarm-notification
+Planned features: <br /> 
+-Spot-provision as a separate field, said provision to be optionaly added to the hourly prices  <br /> 
+-Datepicker for selecting prices for any day in the past  <br /> 
+-Widget and/or alarm-notification  <br /> 
