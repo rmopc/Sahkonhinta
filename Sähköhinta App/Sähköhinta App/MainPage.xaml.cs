@@ -8,6 +8,7 @@ using Newtonsoft.Json.Linq;
 using System.Collections.ObjectModel;
 using Xamarin.Essentials;
 using System.Threading.Tasks;
+using System.Text.RegularExpressions;
 
 namespace Sähköhinta_App
 {
@@ -17,6 +18,7 @@ namespace Sähköhinta_App
         String todayHour = DateTime.Now.AddHours(-2).ToString("M/d/yyyy HH"); //muunnetaan CET-ajasta Suomen aikaan
 
         double taxPercentage = 1;
+        double spotProvision = 0;
                 
         public MainPage()
         {           
@@ -58,14 +60,14 @@ namespace Sähköhinta_App
 
                 //Vuorokauden ylin, alin ja keskihinta sekä niiden asetus tekstikenttiin
                 var dailyMax = pricelist.Max(x => x.value);
-                highPrice.Text = (dailyMax / 10 * taxPercentage).ToString("F") + " c/kWh";
+                highPrice.Text = (dailyMax / 10 * taxPercentage + spotProvision).ToString("F") + " c/kWh";
 
                 var dailyMin = pricelist.Min(x => x.value);
-                lowPrice.Text = (dailyMin / 10 * taxPercentage).ToString("F") + " c/kWh";
+                lowPrice.Text = (dailyMin / 10 * taxPercentage + spotProvision).ToString("F") + " c/kWh";
 
                 double dailyAvg = 0;
                 dailyAvg = pricelist.Where(x => x.date >= startDateTime && x.date <= endDateTime).Average(x => x.value);
-                avgPrice.Text = (dailyAvg / 10 * taxPercentage).ToString("F") + " c/kWh";
+                avgPrice.Text = (dailyAvg / 10 * taxPercentage + spotProvision).ToString("F") + " c/kWh";
 
                 foreach (var item in jsonArray)
                 {
@@ -79,7 +81,7 @@ namespace Sähköhinta_App
                         {
                             string price = item["value"].ToString();
                             double price2 = double.Parse(price);
-                            priceFieldNow.Text = "Hinta nyt: " + (price2 / 10 * taxPercentage).ToString("F") + " c/kWh";
+                            priceFieldNow.Text = "Hinta nyt: " + (price2 / 10 * taxPercentage + spotProvision).ToString("F") + " c/kWh";
                         }
 
                         //Tarkistetaan samalla jos huomisen hinnat näkyy
@@ -101,7 +103,7 @@ namespace Sähköhinta_App
                                                     .Select(x => new
                                                     {
                                                         date = x.date.AddHours(2),
-                                                        value = x.value / 10 * taxPercentage
+                                                        value = x.value / 10 * taxPercentage + spotProvision
                                                     });
 
                             priceListViewTomorrow.ItemsSource = rowsTomorrow;
@@ -112,14 +114,14 @@ namespace Sähköhinta_App
 
                             //Huomisen ylin, alin ja keskihinta sekä niiden asetus tekstikenttiin
                             var dailyMaxTomorrow = pricelistTomorrow.Max(x => x.value);
-                            highPriceTomorrow.Text = (dailyMaxTomorrow / 10 * taxPercentage).ToString("F") + " c/kWh";
+                            highPriceTomorrow.Text = (dailyMaxTomorrow / 10 * taxPercentage + spotProvision).ToString("F") + " c/kWh";
 
                             var dailyMinTomorrow = pricelistTomorrow.Min(x => x.value);
-                            lowPriceTomorrow.Text = (dailyMinTomorrow / 10 * taxPercentage).ToString("F") + " c/kWh";
+                            lowPriceTomorrow.Text = (dailyMinTomorrow / 10 * taxPercentage + spotProvision).ToString("F") + " c/kWh";
 
                             double dailyAvgTomorrow = 0;
                             dailyAvgTomorrow = pricelistTomorrow.Where(x => x.date >= startDateTimeTomorrow && x.date <= endDateTimeTomorrow).Average(x => x.value);
-                            avgPriceTomorrow.Text = (dailyAvgTomorrow / 10 * taxPercentage).ToString("F") + " c/kWh";
+                            avgPriceTomorrow.Text = (dailyAvgTomorrow / 10 * taxPercentage + spotProvision).ToString("F") + " c/kWh";
                         }
                     }
                 }
@@ -138,7 +140,7 @@ namespace Sähköhinta_App
                                         .Select(x => new
                                         {
                                             date = x.date.AddHours(2),
-                                            value = x.value / 10 * taxPercentage
+                                            value = x.value / 10 * taxPercentage + spotProvision
                                         });
 
                 priceListView.ItemsSource = rowsToday;
@@ -206,23 +208,74 @@ namespace Sähköhinta_App
             if (buttonText == "ALV 0%")
             {
                 taxPercentage = 1;
-                taxLabel.Text = "Kaikki hinnat alv 0%";
+
+                if(spotProvision != 0)
+                {
+                    taxLabel.Text = "Kaikki hinnat alv 0%, sis. spot-provision " + spotProvision + " c/kWh";
+                }
+                else
+                {
+                    taxLabel.Text = "Kaikki hinnat alv 0%";
+                }
             }
             else if (buttonText == "ALV 10%")
             {
                 taxPercentage = 1.10;
-                taxLabel.Text = "Kaikki hinnat alv 10%";
+
+                if (spotProvision != 0)
+                {
+                    taxLabel.Text = "Kaikki hinnat alv 10%, sis. spot-provision " + spotProvision + " c/kWh";
+                }
+                else
+                {
+                    taxLabel.Text = "Kaikki hinnat alv 10%";
+                }
             }
             else if (buttonText == "ALV 24%")
             {
                 taxPercentage = 1.24;
-                taxLabel.Text = "Kaikki hinnat alv 24%";
+
+                if (spotProvision != 0)
+                {
+                    taxLabel.Text = "Kaikki hinnat alv 24%, sis. spot-provision " + spotProvision + " c/kWh";
+                }
+                else
+                {
+                    taxLabel.Text = "Kaikki hinnat alv 24%";
+                }
             }
 
             GetJsonAsyncOC();
             await Wait();
             settingsStatus.IsVisible = false;
             CurrentPage = Children.First(x => x.Title == "HINNAT");
+        }
+
+        private async void OnEntryUnfocused(object sender, FocusEventArgs e)
+        {
+            settingsStatus.IsVisible = true;
+            double parsedValue;
+            if (!double.TryParse(((Entry)sender).Text, out parsedValue))
+            {
+                ((Entry)sender).Text = "";
+                await Application.Current.MainPage.DisplayAlert("Virhe", "Anna numeroarvot kahden desimaalin tarkkuudella", "OK");
+            }
+            else
+            {
+                if (!Regex.IsMatch(((Entry)sender).Text, @"[0-9]+(\.[0-9]*)?$"))
+                {
+                    ((Entry)sender).Text = "";
+                    await Application.Current.MainPage.DisplayAlert("Virhe", "Anna numeroarvot kahden desimaalin tarkkuudella", "OK");
+                }
+                else
+                {
+                    spotProvision = double.Parse(((Entry)sender).Text);
+                    GetJsonAsyncOC();
+                    await Wait();
+                    settingsStatus.IsVisible = false;
+                    CurrentPage = Children.First(x => x.Title == "HINNAT");
+                }
+            }
         }
     }
 }
