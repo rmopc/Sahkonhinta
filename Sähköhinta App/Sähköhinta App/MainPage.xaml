@@ -162,12 +162,14 @@
             </StackLayout>
             <Label x:Name="settingsStatus" HorizontalOptions="Center" TextColor="{AppThemeBinding Light=Black, Dark=Gray}" FontSize="18"  Text="Päivitetään..." IsVisible="false"/>
 
-            <Label Text="Syötä Spot-provision määrä kahden desimaalin tarkkuudella. Esim '0.35 c/kWh'" 
+            <Label Text="Syötä Spot-provision määrä kahden desimaalin tarkkuudella, erottele pilkulla. Esim '0,35 c/kWh'" 
                    HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Light=Black, Dark=Gray}" Margin="0,25,0,0"/>
-            <StackLayout Orientation="Horizontal" Padding="10">
-                <Entry  x:Name="spotInputField" Placeholder="0.00" Unfocused="OnEntryUnfocused" FontSize="17" HorizontalOptions="FillAndExpand" Margin="75,0,0,0" TextColor="{AppThemeBinding Light=Black, Dark=Gray}"></Entry>
-                <Label x:Name="spotKwhLabel" Text="c/kWh" FontSize="17" HorizontalOptions="FillAndExpand" Padding="10" Margin="0,5,30,0" TextColor="{AppThemeBinding Light=Black, Dark=Gray}"></Label>
-            </StackLayout>
+            <Frame BackgroundColor="{AppThemeBinding Light={StaticResource LightPrimaryColor}, Dark={StaticResource DarkPrimaryColor}}" OutlineColor="Gray" Margin="40,0,40,0">
+                <StackLayout Orientation="Horizontal" >
+                    <Entry  x:Name="spotInputField" Placeholder="0.00" Unfocused="OnEntryUnfocused" FontSize="17" HorizontalOptions="FillAndExpand" Margin="75,0,0,0" TextColor="{AppThemeBinding Light=Black, Dark=Gray}"></Entry>
+                    <Label x:Name="spotKwhLabel" Text="c/kWh" FontSize="17" HorizontalOptions="FillAndExpand"  Margin="0,10,40,0" TextColor="{AppThemeBinding Light=Black, Dark=Gray}"></Label>
+                </StackLayout>
+            </Frame>
             <StackLayout VerticalOptions="EndAndExpand">
                 <Label Text="Ⓒ Ronie Oljemark 2022" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Light=Black, Dark=Gray}"/>
                 

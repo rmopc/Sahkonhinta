@@ -193,7 +193,19 @@ namespace Sähköhinta_App
         {
             return Task.Delay(500);
         }
-        
+
+        private void UpdateTaxLabel()
+        {
+            if (spotProvision != 0)
+            {
+                taxLabel.Text = "Kaikki hinnat alv " + (taxPercentage - 1) * 100 + "%, sis. spot-provision " + spotProvision + " c/kWh";
+            }
+            else
+            {
+                taxLabel.Text = "Kaikki hinnat alv " + (taxPercentage - 1) * 100 + "%";
+            }
+        }
+
         private async void tax_Clicked(object sender, EventArgs e)
         {
             Button button = (Button)sender;
@@ -208,46 +220,20 @@ namespace Sähköhinta_App
             if (buttonText == "ALV 0%")
             {
                 taxPercentage = 1;
-
-                if(spotProvision != 0)
-                {
-                    taxLabel.Text = "Kaikki hinnat alv 0%, sis. spot-provision " + spotProvision + " c/kWh";
-                }
-                else
-                {
-                    taxLabel.Text = "Kaikki hinnat alv 0%";
-                }
             }
             else if (buttonText == "ALV 10%")
             {
                 taxPercentage = 1.10;
-
-                if (spotProvision != 0)
-                {
-                    taxLabel.Text = "Kaikki hinnat alv 10%, sis. spot-provision " + spotProvision + " c/kWh";
-                }
-                else
-                {
-                    taxLabel.Text = "Kaikki hinnat alv 10%";
-                }
             }
             else if (buttonText == "ALV 24%")
             {
                 taxPercentage = 1.24;
-
-                if (spotProvision != 0)
-                {
-                    taxLabel.Text = "Kaikki hinnat alv 24%, sis. spot-provision " + spotProvision + " c/kWh";
-                }
-                else
-                {
-                    taxLabel.Text = "Kaikki hinnat alv 24%";
-                }
             }
 
             GetJsonAsyncOC();
             await Wait();
             settingsStatus.IsVisible = false;
+            UpdateTaxLabel();
             CurrentPage = Children.First(x => x.Title == "HINNAT");
         }
 
@@ -273,6 +259,7 @@ namespace Sähköhinta_App
                     GetJsonAsyncOC();
                     await Wait();
                     settingsStatus.IsVisible = false;
+                    UpdateTaxLabel();
                     CurrentPage = Children.First(x => x.Title == "HINNAT");
                 }
             }
