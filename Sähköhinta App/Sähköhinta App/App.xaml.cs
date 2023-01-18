@@ -2,7 +2,7 @@
 using Xamarin.Forms;
 using Xamarin.Forms.Xaml;
 
-namespace Sähköhinta_App
+namespace Sahkonhinta_App
 {
     public partial class App : Application
     {

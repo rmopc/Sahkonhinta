@@ -3,11 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.1.32328.378
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sähköhinta App.Android", "Sähköhinta App\Sähköhinta App.Android\Sähköhinta App.Android.csproj", "{F8A09935-7302-4E6E-AAB2-EF749116B6FA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sahkonhinta App.Android", "Sähköhinta App\Sähköhinta App.Android\Sahkonhinta App.Android.csproj", "{F8A09935-7302-4E6E-AAB2-EF749116B6FA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sähköhinta App.iOS", "Sähköhinta App\Sähköhinta App.iOS\Sähköhinta App.iOS.csproj", "{04D30D21-D304-4810-BB2C-104FFD74DD2E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sahkonhinta App.iOS", "Sähköhinta App\Sähköhinta App.iOS\Sahkonhinta App.iOS.csproj", "{04D30D21-D304-4810-BB2C-104FFD74DD2E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sähköhinta App", "Sähköhinta App\Sähköhinta App\Sähköhinta App.csproj", "{3A5820FB-C349-4E64-931B-DF5A7E1CA79D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sahkonhinta App", "Sähköhinta App\Sähköhinta App\Sahkonhinta App.csproj", "{3A5820FB-C349-4E64-931B-DF5A7E1CA79D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

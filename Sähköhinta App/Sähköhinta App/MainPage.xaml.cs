@@ -10,7 +10,7 @@ using Xamarin.Essentials;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
 
-namespace Sähköhinta_App
+namespace Sahkonhinta_App
 {
     public partial class MainPage : TabbedPage
     {

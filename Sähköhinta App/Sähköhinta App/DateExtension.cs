@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace Sähköhinta_App
+namespace Sahkonhinta_App
 {
     public static class DateExtension
     {

@@ -5,7 +5,7 @@ using System.Linq;
 using Foundation;
 using UIKit;
 
-namespace Sähköhinta_App.iOS
+namespace Sahkonhinta_App.iOS
 {
     public class Application
     {

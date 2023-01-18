@@ -11,7 +11,7 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>Sähköhinta_App.iOS</RootNamespace>
     <IPhoneResourcePrefix>Resources</IPhoneResourcePrefix>
-    <AssemblyName>Sähköhinta App.iOS</AssemblyName>
+    <AssemblyName>Sahkonhinta App.iOS</AssemblyName>
     <MtouchEnableSGenConc>true</MtouchEnableSGenConc>
     <MtouchHttpClientHandler>NSUrlSessionHandler</MtouchHttpClientHandler>
     <ProvisioningType>automatic</ProvisioningType>
@@ -61,6 +61,9 @@
     <MtouchArch>ARM64</MtouchArch>
     <CodesignKey>iPhone Developer</CodesignKey>
     <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(RunConfiguration)' == 'Default' ">
+    <AppExtensionDebugBundleId />
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Main.cs" />
@@ -131,9 +134,9 @@
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\iOS\Xamarin.iOS.CSharp.targets" />
   <ItemGroup>
-    <ProjectReference Include="..\Sähköhinta App\Sähköhinta App.csproj">
-      <Project>{DA76B169-8CF2-4F96-A5DB-9CDBD9CB92FA}</Project>
-      <Name>Sähköhinta App</Name>
+    <ProjectReference Include="..\Sähköhinta App\Sahkonhinta App.csproj">
+      <Project>{3A5820FB-C349-4E64-931B-DF5A7E1CA79D}</Project>
+      <Name>Sahkonhinta App</Name>
     </ProjectReference>
   </ItemGroup>
 </Project>

@@ -8,7 +8,7 @@
     <TemplateGuid>{c9e5eea5-ca05-42a1-839b-61506e0a37df}</TemplateGuid>
     <OutputType>Library</OutputType>
     <RootNamespace>Sähköhinta_App.Droid</RootNamespace>
-    <AssemblyName>Sähköhinta App.Android</AssemblyName>
+    <AssemblyName>Sahkonhinta_App.Android</AssemblyName>
     <Deterministic>True</Deterministic>
     <AndroidApplication>True</AndroidApplication>
     <AndroidResgenFile>Resources\Resource.designer.cs</AndroidResgenFile>
@@ -98,9 +98,9 @@
     <Folder Include="Resources\drawable\" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Sähköhinta App\Sähköhinta App.csproj">
-      <Project>{DA76B169-8CF2-4F96-A5DB-9CDBD9CB92FA}</Project>
-      <Name>Sähköhinta App</Name>
+    <ProjectReference Include="..\Sähköhinta App\Sahkonhinta App.csproj">
+      <Project>{3A5820FB-C349-4E64-931B-DF5A7E1CA79D}</Project>
+      <Name>Sahkonhinta App</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath)\Xamarin\Android\Xamarin.Android.CSharp.targets" />

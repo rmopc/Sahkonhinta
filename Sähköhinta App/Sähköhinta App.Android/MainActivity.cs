@@ -7,7 +7,7 @@ using Android.OS;
 using System.Globalization;
 using System.Threading;
 
-namespace Sähköhinta_App.Droid
+namespace Sahkonhinta_App.Droid
 {
     [Activity(Label = "SähköSpot", Icon = "@mipmap/icon", Theme = "@style/MainTheme", MainLauncher = true, ConfigurationChanges = ConfigChanges.ScreenSize | ConfigChanges.Orientation | ConfigChanges.UiMode | ConfigChanges.ScreenLayout | ConfigChanges.SmallestScreenSize )]
     public class MainActivity : global::Xamarin.Forms.Platform.Android.FormsAppCompatActivity
