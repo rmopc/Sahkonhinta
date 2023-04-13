@@ -15,7 +15,12 @@ namespace Sahkonhinta_App
     public partial class MainPage : TabbedPage
     {
         DateTime today = DateTime.Today;
-        String todayHour = DateTime.Now.AddHours(-2).ToString("M/d/yyyy HH"); //muunnetaan CET-ajasta Suomen aikaan
+
+        // Haetaan oikea aikavyöhyke, käytetään listaamaan vuorokauden tunteja alempana
+        TimeZoneInfo localTimeZone = TimeZoneInfo.FindSystemTimeZoneById(TimeZoneInfo.Local.Id);
+
+        //String todayHour = DateTime.Now.AddHours(-2).ToString("M/d/yyyy HH"); //muunnetaan CET-ajasta Suomen talviaikaan, kuluva tunti
+        String todayHour = DateTime.Now.AddHours(-3).ToString("M/d/yyyy HH"); //muunnetaan CET-ajasta Suomen kesäaikaan, kuluva tunti
 
         double taxPercentage = 1;
         double spotProvision = 0;
@@ -58,6 +63,7 @@ namespace Sahkonhinta_App
             var jsonArray = JArray.Parse(prices.ToString());
 
             DateTime startDateTime = DateTime.Today; //Tänään klo 00:00:00
+
             DateTime endDateTime = DateTime.Today.AddDays(1).AddTicks(-1); //Tänään klo 23:59:59
 
             DateTime startDateTimeTomorrow = DateTime.Today.AddDays(1); //Huomenna klo 00:00:00
@@ -88,7 +94,7 @@ namespace Sahkonhinta_App
                 {
                     string displayDate = date.ToString("M/d/yyyy HH");
 
-                    //Tämänhetkinen hinta
+                    //Tämänhetkinen, eli kuluvan tunnin hinta
                     if (displayDate.Contains(todayHour))
                     {
                         string price = item["value"].ToString();
@@ -138,10 +144,10 @@ namespace Sahkonhinta_App
                 }
             }
 
-            //Luodaan muuttuja joka sisältää kaikki vuodokauden tunnit           
+            //Luodaan muuttuja joka sisältää kaikki tämän vuodokauden tunnit           
             var hours = Enumerable.Range(-1, 23).Select(i => startDateTime.AddHours(i));
 
-            //Koska aikaa säädetään kahdella tunnilla eteenpäin, luodaan lisäksi muutuja joka sisältää vuorokauden kaksi ensimmäistä tuntia            
+            //Koska aikaa säädetään kahdella tunnilla eteenpäin, luodaan lisäksi muutuja joka sisältää tämän vuorokauden kaksi ensimmäistä tuntia            
             var hoursFirstTwo = Enumerable.Range(-2, 2).Select(i => startDateTime.AddHours(i));
 
             //Liitetään kummankin muuttujan tunnit yhteen            
@@ -151,7 +157,7 @@ namespace Sahkonhinta_App
             var rowsToday = pricedata.Where(x => hours.Contains(x.date))
                                     .Select(x => new
                                     {
-                                        date = x.date.AddHours(2),
+                                        date = TimeZoneInfo.ConvertTimeFromUtc(x.date, localTimeZone),
                                         value = x.value / 10 * taxPercentage + spotProvision
                                     });
 
