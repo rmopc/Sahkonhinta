@@ -17,10 +17,7 @@ namespace Sahkonhinta_App
         DateTime today = DateTime.Today;
 
         // Haetaan oikea aikavyöhyke, käytetään listaamaan vuorokauden tunteja alempana
-        TimeZoneInfo localTimeZone = TimeZoneInfo.FindSystemTimeZoneById(TimeZoneInfo.Local.Id);
-
-        //String todayHour = DateTime.Now.AddHours(-2).ToString("M/d/yyyy HH"); //muunnetaan CET-ajasta Suomen talviaikaan, kuluva tunti
-        String todayHour = DateTime.Now.AddHours(-3).ToString("M/d/yyyy HH"); //muunnetaan CET-ajasta Suomen kesäaikaan, kuluva tunti
+        TimeZoneInfo localTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Europe/Helsinki");
 
         double taxPercentage = 1;
         double spotProvision = 0;
@@ -62,9 +59,9 @@ namespace Sahkonhinta_App
             var prices = jsonObject["prices"];
             var jsonArray = JArray.Parse(prices.ToString());
 
-            DateTime startDateTime = DateTime.Today; //Tänään klo 00:00:00
+            DateTime startDateTime = DateTime.Today; //Tänään klo 00:00:00                     
 
-            DateTime endDateTime = DateTime.Today.AddDays(1).AddTicks(-1); //Tänään klo 23:59:59
+            DateTime endDateTime = DateTime.Today.AddDays(1).AddTicks(-1); //Tänään klo 23:59:59            
 
             DateTime startDateTimeTomorrow = DateTime.Today.AddDays(1); //Huomenna klo 00:00:00
             DateTime endDateTimeTomorrow = DateTime.Today.AddDays(2).AddTicks(-1); //Huomenna klo 23:59:59
@@ -75,7 +72,8 @@ namespace Sahkonhinta_App
             ObservableCollection<Price> pricedata = new ObservableCollection<Price>(pricelist);
 
             //haetaan päivän hinnat jotta voidaan laskea keskiarvot ja näyttää ylin/alin
-            pricelist = pricelist.Where(x => x.date >= startDateTime && x.date <= endDateTime).ToList();
+            pricelist = pricelist.Where(x => TimeZoneInfo.ConvertTimeFromUtc(x.date, localTimeZone) >= startDateTime &&
+                                                                    TimeZoneInfo.ConvertTimeFromUtc(x.date, localTimeZone) <= endDateTime).ToList();            
 
             //Vuorokauden ylin, alin ja keskihinta sekä niiden asetus tekstikenttiin
             var dailyMax = pricelist.Max(x => x.value);
@@ -87,15 +85,19 @@ namespace Sahkonhinta_App
             double dailyAvg = pricelist.Average(x => x.value);
             avgPrice.Text = (dailyAvg / 10 * taxPercentage + spotProvision).ToString("F") + " c/kWh";
 
+            string todayHour = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, localTimeZone).ToString("M/d/yyyy HH");
+
             foreach (var item in jsonArray)
             {
                 DateTime date;
-                if (DateTime.TryParse(item["date"].ToString(), out date))
-                {
-                    string displayDate = date.ToString("M/d/yyyy HH");
 
-                    //Tämänhetkinen, eli kuluvan tunnin hinta
-                    if (displayDate.Contains(todayHour))
+                if (DateTime.TryParse(item["date"].ToString(), out date))
+                {                    
+                    date = DateTime.SpecifyKind(date, DateTimeKind.Utc);
+                    DateTime localDate = TimeZoneInfo.ConvertTimeFromUtc(date, localTimeZone);
+
+                    // Tämänhetkinen, eli kuluvan tunnin hinta
+                    if (localDate.ToString("M/d/yyyy HH") == todayHour)
                     {
                         string price = item["value"].ToString();
                         double price2 = double.Parse(price);
@@ -108,7 +110,7 @@ namespace Sahkonhinta_App
                         pricesTomorrowButton.IsEnabled = true;
 
                         //Luodaan muuttuja joka sisältää kaikki huomisen vuorokauden tunnit           
-                        var hoursTomorrow = Enumerable.Range(0, 23).Select(i => startDateTimeTomorrow.AddHours(i));
+                        var hoursTomorrow = Enumerable.Range(-1, 23).Select(i => startDateTimeTomorrow.AddHours(i));
 
                         //Koska aikaa säädetään kahdella tunnilla eteenpäin, luodaan lisäksi muutuja joka sisältää vuorokauden kaksi ensimmäistä tuntia            
                         var hoursFirstTwoTomorrow = Enumerable.Range(-2, 2).Select(i => startDateTimeTomorrow.AddHours(i));
@@ -120,7 +122,7 @@ namespace Sahkonhinta_App
                         var rowsTomorrow = pricedata.Where(x => hoursTomorrow.Contains(x.date))
                                                 .Select(x => new
                                                 {
-                                                    date = x.date.AddHours(2),
+                                                    date = TimeZoneInfo.ConvertTimeFromUtc(x.date, localTimeZone),
                                                     value = x.value / 10 * taxPercentage + spotProvision
                                                 });
 
@@ -128,7 +130,11 @@ namespace Sahkonhinta_App
 
 
                         //haetaan huomisen hinnat jotta voidaan laskea keskiarvot ja näyttää ylin/alin
-                        pricelistTomorrow = pricelistTomorrow.Where(x => x.date >= startDateTimeTomorrow && x.date <= endDateTimeTomorrow).ToList();
+                        //pricelistTomorrow = pricelistTomorrow.Where(x => x.date >= startDateTimeTomorrow && x.date <= endDateTimeTomorrow).ToList();
+
+
+                        pricelistTomorrow = pricelistTomorrow.Where(x => TimeZoneInfo.ConvertTimeFromUtc(x.date, localTimeZone) >= startDateTimeTomorrow &&
+                                                                                                                   TimeZoneInfo.ConvertTimeFromUtc(x.date, localTimeZone) <= endDateTimeTomorrow).ToList();
 
                         //Huomisen ylin, alin ja keskihinta sekä niiden asetus tekstikenttiin
                         var dailyMaxTomorrow = pricelistTomorrow.Max(x => x.value);
@@ -137,6 +143,7 @@ namespace Sahkonhinta_App
                         var dailyMinTomorrow = pricelistTomorrow.Min(x => x.value);
                         lowPriceTomorrow.Text = (dailyMinTomorrow / 10 * taxPercentage + spotProvision).ToString("F") + " c/kWh";
 
+                        //TARKISTA TÄMÄ SEURAAVAKSI
                         double dailyAvgTomorrow = 0;
                         dailyAvgTomorrow = pricelistTomorrow.Where(x => x.date >= startDateTimeTomorrow && x.date <= endDateTimeTomorrow).Average(x => x.value);
                         avgPriceTomorrow.Text = (dailyAvgTomorrow / 10 * taxPercentage + spotProvision).ToString("F") + " c/kWh";
@@ -172,11 +179,13 @@ namespace Sahkonhinta_App
             avgPrice.IsVisible = false;
             countedPricesToday.IsVisible = false;
             priceListView.IsVisible= false;
+            pricesTomorrowButton.IsEnabled=false;
 
             avgLabelTomorrow.IsVisible=true;
             avgPriceTomorrow.IsVisible=true;
             countedPricesTomorrow.IsVisible=true;
             priceListViewTomorrow.IsVisible = true;
+            pricesTodayButton.IsEnabled = true;
         }
 
         private void pricesTodayButton_Clicked(object sender, EventArgs e)
@@ -187,11 +196,13 @@ namespace Sahkonhinta_App
             avgPrice.IsVisible = true;
             countedPricesToday.IsVisible = true;
             priceListView.IsVisible = true;
+            pricesTomorrowButton.IsEnabled = true;
 
             avgLabelTomorrow.IsVisible = false;
             avgPriceTomorrow.IsVisible = false;
             countedPricesTomorrow.IsVisible = false;
             priceListViewTomorrow.IsVisible = false;
+            pricesTodayButton.IsEnabled=false;
         }
 
         private void reloadButton_Clicked(object sender, EventArgs e)
