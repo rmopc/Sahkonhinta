@@ -39,7 +39,7 @@
                     <Label Text="SähköSpot" HorizontalTextAlignment="Center" FontSize="60" TextColor="{AppThemeBinding Light=Black, Dark=Gray}"/>
             </Frame>
                 <Label x:Name="statusField" Text="tilaa päivitetään..." FontSize="16" Padding="30,0,30,0" HorizontalTextAlignment="Center"  TextColor="{AppThemeBinding Light=Black, Dark=Gray}"/>
-                <Label x:Name="priceFieldNow" Text="tietoja haetaan..." FontSize="18" Padding="30,0,30,0" HorizontalTextAlignment="Center"  TextColor="{AppThemeBinding Light=Black, Dark=Gray}"/>
+                <Label x:Name="priceFieldNow" Text="tietoja haetaan..." FontSize="22" Padding="30,0,30,0" HorizontalTextAlignment="Center"  TextColor="{AppThemeBinding Light=Black, Dark=Gray}"/>
 
                 <StackLayout Orientation="Horizontal" HorizontalOptions="Center" >
                     <Label x:Name="avgLabel" FontSize="18" Text="Keskihinta tänään:" TextColor="{AppThemeBinding Light=Black, Dark=Gray}"/>
