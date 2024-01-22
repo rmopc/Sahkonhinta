@@ -20,7 +20,7 @@ namespace Sahkonhinta_App
         TimeZoneInfo localTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Europe/Helsinki");
 
         double taxPercentage;
-        double spotProvision = 0;
+        double spotProvision;
         JObject jsonObject = null;
 
         public MainPage()
@@ -37,6 +37,20 @@ namespace Sahkonhinta_App
                 // Asetetaan oletus-veroprosentti, mikäli sitä ei ole tallennettu tai jos se on tyhjä
                 taxPercentage = 1.0;
             }
+
+            //Ladataan spot-provisio
+            if (Preferences.ContainsKey("SpotProvision"))
+            {
+                spotProvision = Preferences.Get("SpotProvision", 0.0);
+            }
+            else
+            {
+                //Asetetaan oletus-spot-provisio, mikäli sitä ei ole tallennettu tai jos se on tyhjä
+                spotProvision = 0.0;
+            }
+
+            //Asetetaan spot-provision syöttökenttään placeholder-arvo, joka on sama kuin aiemmin syötetty arvo
+            spotInputField.Placeholder = spotProvision.ToString("0.00");
 
             UpdateTaxLabel();
             FetchJsonData();
@@ -296,6 +310,10 @@ namespace Sahkonhinta_App
                 else
                 {
                     spotProvision = double.Parse(((Entry)sender).Text);
+
+                    // Tallennetaan asetettu spot-provisio, jotta se säilyy vaikka sovellus suljetaan 
+                    Preferences.Set("SpotProvision", spotProvision);
+
                     UpdateUIWithData();
                     await Wait();
                     settingsStatus.IsVisible = false;
