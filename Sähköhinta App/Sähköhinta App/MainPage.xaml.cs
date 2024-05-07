@@ -135,14 +135,17 @@ namespace Sahkonhinta_App
                 }
             }
 
-            //Luodaan muuttuja joka sisältää kaikki tämän vuodokauden tunnit           
-            var hours = Enumerable.Range(-1, 23).Select(i => startDateTime.AddHours(i));
+            //Luodaan muuttuja joka sisältää kaikki tämän vuodokauden tunnit
+            //Tätä säädetty siirryttäessä kesäaikaan keväällä 2024, otettava tarkasteluun talviajan myötä
+            //Samalla kommentoitu allaolevia rivejä pois, sillä tuntien manuaalista säätöä ei enää tehdä
+            //Vaan aikavyöhyke määritellään jo rivillä 20
+            var hours = Enumerable.Range(-3, 24).Select(i => startDateTime.AddHours(i));
 
-            //Koska aikaa säädetään kahdella tunnilla eteenpäin, luodaan lisäksi muutuja joka sisältää tämän vuorokauden kaksi ensimmäistä tuntia            
-            var hoursFirstTwo = Enumerable.Range(-2, 2).Select(i => startDateTime.AddHours(i));
+            ////Koska aikaa säädetään kahdella tunnilla eteenpäin, luodaan lisäksi muutuja joka sisältää tämän vuorokauden kaksi ensimmäistä tuntia            
+            //var hoursFirstTwo = Enumerable.Range(-2, 2).Select(i => startDateTime.AddHours(i));
 
-            //Liitetään kummankin muuttujan tunnit yhteen            
-            hours = hours.Union(hoursFirstTwo);
+            ////Liitetään kummankin muuttujan tunnit yhteen            
+            //hours = hours.Union(hoursFirstTwo);
 
             // Kaikki kuluvan vuorokauden tunnit
             var rowsToday = pricedata.Where(x => hours.Contains(x.date))
