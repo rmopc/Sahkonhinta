@@ -167,14 +167,16 @@ namespace Sahkonhinta_App
             {
                 pricesTomorrowButton.IsEnabled = true;
 
-                //Luodaan muuttuja joka sisältää kaikki huomisen vuorokauden tunnit           
-                var hoursTomorrow = Enumerable.Range(-1, 23).Select(i => startDateTimeTomorrow.AddHours(i));
+                //Luodaan muuttuja joka sisältää kaikki huomisen vuorokauden tunnit
+                //Tätä säädetty siirryttäessä kesäaikaan keväällä 2024, otettava tarkasteluun talviajan myötä
+                //Samalla kommentoitu allaolevia rivejä pois, sillä tuntien manuaalista säätöä ei enää tehdä
+                var hoursTomorrow = Enumerable.Range(-3, 24).Select(i => startDateTimeTomorrow.AddHours(i));
 
-                //Koska aikaa säädetään kahdella tunnilla eteenpäin, luodaan lisäksi muutuja joka sisältää vuorokauden kaksi ensimmäistä tuntia            
-                var hoursFirstTwoTomorrow = Enumerable.Range(-2, 2).Select(i => startDateTimeTomorrow.AddHours(i));
+                ////Koska aikaa säädetään kahdella tunnilla eteenpäin, luodaan lisäksi muutuja joka sisältää vuorokauden kaksi ensimmäistä tuntia            
+                //var hoursFirstTwoTomorrow = Enumerable.Range(-2, 2).Select(i => startDateTimeTomorrow.AddHours(i));
 
-                //Liitetään kummankin muuttujan tunnit yhteen            
-                hoursTomorrow = hoursTomorrow.Union(hoursFirstTwoTomorrow);
+                ////Liitetään kummankin muuttujan tunnit yhteen            
+                //hoursTomorrow = hoursTomorrow.Union(hoursFirstTwoTomorrow);
 
                 // Kaikki huomisen tunnit
                 var rowsTomorrow = pricedata.Where(x => hoursTomorrow.Contains(x.date))

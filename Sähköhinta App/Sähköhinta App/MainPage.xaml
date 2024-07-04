@@ -159,7 +159,7 @@
 
             <Label Text="Valitse ALV:" HorizontalOptions="Center" TextColor="{AppThemeBinding Light=Black, Dark=Gray}"/>
             <StackLayout Orientation="Horizontal" HorizontalOptions="Center" >
-                <Button x:Name="tax00" Text="ALV 0%" Clicked="tax_Clicked" IsEnabled="False"></Button>
+                <Button x:Name="tax00" Text="ALV 0%" Clicked="tax_Clicked" ></Button>
                 <Button x:Name="tax10" Text="ALV 10%" Clicked="tax_Clicked"></Button>
                 <Button x:Name="tax24" Text="ALV 24%" Clicked="tax_Clicked"></Button>
             </StackLayout>
