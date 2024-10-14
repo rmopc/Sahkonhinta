@@ -9,6 +9,8 @@ using System.Collections.ObjectModel;
 using Xamarin.Essentials;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
+using Microcharts;
+using SkiaSharp;
 
 namespace Sahkonhinta_App
 {
@@ -22,6 +24,12 @@ namespace Sahkonhinta_App
         double taxPercentage;
         double spotProvision;
         JObject jsonObject = null;
+
+        List<Price> pricelist;
+        List<Price> pricelistTomorrow;
+
+        private double _startScale = 1;
+        private double _currentScale = 1;
 
         public MainPage()
         {           
@@ -102,10 +110,16 @@ namespace Sahkonhinta_App
             ///////////////////////////////////////////////////
             /////           KULUVAN PÄIVÄN HINNAT           /////
             //////////////////////////////////////////////////
-            
+
             //Haetaan kaikki kuluvan päivän hinnat listalle laskentaa varten
-            pricelist = pricelist.Where(x => TimeZoneInfo.ConvertTimeFromUtc(x.date, localTimeZone) >= startDateTime &&
-                                                                    TimeZoneInfo.ConvertTimeFromUtc(x.date, localTimeZone) <= endDateTime).ToList();            
+            pricelist = jsonArray.Where(x => TimeZoneInfo.ConvertTimeFromUtc(DateTime.Parse(x["date"].ToString()), localTimeZone) >= startDateTime &&
+                                                                      TimeZoneInfo.ConvertTimeFromUtc(DateTime.Parse(x["date"].ToString()), localTimeZone) <= endDateTime)
+                                 .Select(x => new Price
+                                 {
+                                     date = DateTime.Parse(x["date"].ToString()),
+                                     value = (double)x["value"]
+                                 })
+                                 .ToList();
 
             //Vuorokauden ylin, alin ja keskihinta sekä niiden asetus tekstikenttiin
             var dailyMax = pricelist.Max(x => x.value);
@@ -187,11 +201,17 @@ namespace Sahkonhinta_App
                                         });
 
                 priceListViewTomorrow.ItemsSource = rowsTomorrow;
-            }       
+            }
 
             //Haetaan kaikki huomisen hinnat listalle laskentaa varten
-            pricelistTomorrow = pricelistTomorrow.Where(x => TimeZoneInfo.ConvertTimeFromUtc(x.date, localTimeZone) >= startDateTimeTomorrow &&
-                                                                                                           TimeZoneInfo.ConvertTimeFromUtc(x.date, localTimeZone) <= endDateTimeTomorrow).ToList();
+            pricelistTomorrow = jsonArray.Where(x => TimeZoneInfo.ConvertTimeFromUtc(DateTime.Parse(x["date"].ToString()), localTimeZone) >= startDateTimeTomorrow &&
+                                                     TimeZoneInfo.ConvertTimeFromUtc(DateTime.Parse(x["date"].ToString()), localTimeZone) <= endDateTimeTomorrow)
+                                         .Select(x => new Price
+                                         {
+                                             date = DateTime.Parse(x["date"].ToString()),
+                                             value = (double)x["value"]
+                                         })
+                                         .ToList();
 
             //Huomisen ylin, alin ja keskihinta sekä niiden asetus tekstikenttiin
             var dailyMaxTomorrow = pricelistTomorrow.Max(x => x.value);
@@ -202,10 +222,72 @@ namespace Sahkonhinta_App
 
             double dailyAvgTomorrow = pricelistTomorrow.Average(x => x.value);
             avgPriceTomorrow.Text = (dailyAvgTomorrow / 10 * taxPercentage + spotProvision).ToString("F") + " c/kWh";
+
+            //Taulukon/graafin muodostus
+            var chart = GenerateDailyPriceChart(pricelist);
+            dailyPriceChart.Chart = chart;
+        }
+
+        private Chart GenerateDailyPriceChart(List<Price> prices)
+        {
+            var entries = new List<ChartEntry>();
+            var colors = new[]
+            {
+                SKColor.Parse("#266489"),
+                SKColor.Parse("#68B9C0"),
+                SKColor.Parse("#90D585"),
+                SKColor.Parse("#F3C151"),
+                SKColor.Parse("#F37F64"),
+                SKColor.Parse("#424856"),
+                SKColor.Parse("#8F97A4"),
+                SKColor.Parse("#DAC096"),
+                SKColor.Parse("#76846E"),
+                SKColor.Parse("#DABFAF"),
+                SKColor.Parse("#A65B69"),
+                SKColor.Parse("#97A69D")
+            };
+
+            if (prices == null || prices.Count == 0)
+            {
+                return new LineChart
+                {
+                    Entries = new List<ChartEntry>(),
+                    LabelTextSize = 20f,
+                    LabelOrientation = Orientation.Horizontal,
+                    ValueLabelOrientation = Orientation.Horizontal,
+                    BackgroundColor = SKColors.Transparent
+                };
+            }
+
+            for (int i = 0; i < prices.Count; i++)
+            {
+                var price = prices[i];
+                var localTime = TimeZoneInfo.ConvertTimeFromUtc(price.date, localTimeZone);
+                entries.Add(new ChartEntry((float)(price.value / 10 * taxPercentage + spotProvision))
+                {
+                    Label = i % 2 == 0 ? localTime.ToString("HH") : "",
+                    ValueLabel = i % 2 == 0 ? ((float)(price.value / 10 * taxPercentage + spotProvision)).ToString("F1") : "",
+                    Color = colors[i % colors.Length]
+                });
+            }
+
+            return new LineChart
+            {
+                Entries = entries,
+                LabelTextSize = 40f, // Increased for better visibility when zoomed
+                LabelOrientation = Orientation.Horizontal,
+                ValueLabelOrientation = Orientation.Horizontal,
+                //BackgroundColor = SKColors.Transparent,
+                LineSize = 8f, // Increase line thickness for better visibility when zoomed
+                PointSize = 20f // Increase point size for better visibility when zoomed
+            };
         }
 
         private void pricesTomorrowButton_Clicked(object sender, EventArgs e)
-        {            
+        {
+            var chartTomorrow = GenerateDailyPriceChart(pricelistTomorrow);
+            dailyPriceChart.Chart = chartTomorrow;
+
             priceFieldLabel.Text = "Hinnat huomenna";
 
             avgLabel.IsVisible = false;
@@ -223,6 +305,9 @@ namespace Sahkonhinta_App
 
         private void pricesTodayButton_Clicked(object sender, EventArgs e)
         {
+            var chartToday = GenerateDailyPriceChart(pricelist);
+            dailyPriceChart.Chart = chartToday;
+
             priceFieldLabel.Text = "Hinnat tänään";
 
             avgLabel.IsVisible = true;
@@ -325,6 +410,35 @@ namespace Sahkonhinta_App
                     UpdateTaxLabel();
                     CurrentPage = Children.First(x => x.Title == "HINNAT");
                 }
+            }
+        }
+
+        private void OnChartPinchUpdated(object sender, PinchGestureUpdatedEventArgs e)
+        {
+            switch (e.Status)
+            {
+                case GestureStatus.Started:
+                    // Store the current scale when the gesture begins
+                    _currentScale = dailyPriceChart.Scale;
+                    _startScale = _currentScale;
+                    break;
+
+                case GestureStatus.Running:
+                    // Calculate the new scale based on the pinch gesture
+                    _currentScale += (e.Scale - 1) * _startScale;
+                    _currentScale = Math.Max(1, _currentScale); // Ensure we don't zoom out too far
+
+                    // Apply the new scale
+                    dailyPriceChart.Scale = _currentScale;
+
+                    // Adjust the ChartView size based on the new scale
+                    dailyPriceChart.WidthRequest = 1000 * _currentScale;
+                    dailyPriceChart.HeightRequest = 400 * _currentScale;
+                    break;
+
+                case GestureStatus.Completed:
+                    // The gesture has completed, you can add any finalization logic here
+                    break;
             }
         }
     }

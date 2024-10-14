@@ -3,6 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="Sahkonhinta_App.MainPage" 
              xmlns:android="clr-namespace:Xamarin.Forms.PlatformConfiguration.AndroidSpecific;assembly=Xamarin.Forms.Core"
+             xmlns:microcharts="clr-namespace:Microcharts.Forms;assembly=Microcharts.Forms"
              android:TabbedPage.ToolbarPlacement="Bottom"
              BarBackgroundColor="Gray" BarTextColor="White"
              SelectedTabColor="Gray"
@@ -81,7 +82,16 @@
 
                 <Button x:Name="reloadButton" Text="Päivitä näkymä" Clicked="reloadButton_Clicked" CornerRadius="5" Padding="10"/>
 
-                <Label x:Name="priceFieldLabel" Text="Hinnat tänään" FontSize="24" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Light=Black, Dark=Gray}"/>
+                <Label x:Name="priceFieldLabel" Text="Hinnat tänään" FontSize="24" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Light=Black, Dark=Gray}"   />
+                
+                <ScrollView x:Name="chartScrollView" Orientation="Both" MinimumHeightRequest="300" MinimumWidthRequest="500" Padding="0" >
+                    <microcharts:ChartView x:Name="dailyPriceChart" HeightRequest="300" WidthRequest="700" >
+                        <microcharts:ChartView.GestureRecognizers>
+                            <PinchGestureRecognizer PinchUpdated="OnChartPinchUpdated"/>
+                        </microcharts:ChartView.GestureRecognizers>
+                    </microcharts:ChartView>
+                </ScrollView>
+
                 <ListView x:Name="priceListView" SeparatorVisibility="None" HasUnevenRows="True">
                     <ListView.ItemTemplate>
                         <DataTemplate>
