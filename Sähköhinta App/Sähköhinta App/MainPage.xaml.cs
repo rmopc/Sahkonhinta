@@ -135,17 +135,13 @@ namespace Sahkonhinta_App
                 }
             }
 
+            // Kesä-/talviaika
+            bool isDstToday = localTimeZone.IsDaylightSavingTime(startDateTime);
+
             //Luodaan muuttuja joka sisältää kaikki tämän vuodokauden tunnit
-            //Tätä säädetty siirryttäessä kesäaikaan keväällä 2024, otettava tarkasteluun talviajan myötä
-            //Samalla kommentoitu allaolevia rivejä pois, sillä tuntien manuaalista säätöä ei enää tehdä
-            //Vaan aikavyöhyke määritellään jo rivillä 20
-            var hours = Enumerable.Range(-3, 24).Select(i => startDateTime.AddHours(i));
-
-            ////Koska aikaa säädetään kahdella tunnilla eteenpäin, luodaan lisäksi muutuja joka sisältää tämän vuorokauden kaksi ensimmäistä tuntia            
-            //var hoursFirstTwo = Enumerable.Range(-2, 2).Select(i => startDateTime.AddHours(i));
-
-            ////Liitetään kummankin muuttujan tunnit yhteen            
-            //hours = hours.Union(hoursFirstTwo);
+            var hours = isDstToday
+                ? Enumerable.Range(-3, 24).Select(i => startDateTime.AddHours(i)) // DST logic
+                : Enumerable.Range(-2, 24).Select(i => startDateTime.AddHours(i)); // Standard time logic
 
             // Kaikki kuluvan vuorokauden tunnit
             var rowsToday = pricedata.Where(x => hours.Contains(x.date))
@@ -167,16 +163,13 @@ namespace Sahkonhinta_App
             {
                 pricesTomorrowButton.IsEnabled = true;
 
-                //Luodaan muuttuja joka sisältää kaikki huomisen vuorokauden tunnit
-                //Tätä säädetty siirryttäessä kesäaikaan keväällä 2024, otettava tarkasteluun talviajan myötä
-                //Samalla kommentoitu allaolevia rivejä pois, sillä tuntien manuaalista säätöä ei enää tehdä
-                var hoursTomorrow = Enumerable.Range(-3, 24).Select(i => startDateTimeTomorrow.AddHours(i));
-
-                ////Koska aikaa säädetään kahdella tunnilla eteenpäin, luodaan lisäksi muutuja joka sisältää vuorokauden kaksi ensimmäistä tuntia            
-                //var hoursFirstTwoTomorrow = Enumerable.Range(-2, 2).Select(i => startDateTimeTomorrow.AddHours(i));
-
-                ////Liitetään kummankin muuttujan tunnit yhteen            
-                //hoursTomorrow = hoursTomorrow.Union(hoursFirstTwoTomorrow);
+               // Kesä-/talviaika
+                bool isDstTomorrow = localTimeZone.IsDaylightSavingTime(startDateTimeTomorrow);
+                
+                // Luodaan muuttuja joka sisältää kaikki huomisen vuodokauden tunnit
+                var hoursTomorrow = isDstTomorrow
+                    ? Enumerable.Range(-3, 24).Select(i => startDateTimeTomorrow.AddHours(i)) // DST logic
+                    : Enumerable.Range(-2, 24).Select(i => startDateTimeTomorrow.AddHours(i)); // Standard time logic
 
                 // Kaikki huomisen tunnit
                 var rowsTomorrow = pricedata.Where(x => hoursTomorrow.Contains(x.date))
