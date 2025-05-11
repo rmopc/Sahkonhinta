@@ -53,28 +53,68 @@ namespace Sahkonhinta_App
             spotInputField.Placeholder = spotProvision.ToString("0.00");
 
             UpdateTaxLabel();
-            FetchJsonData();
             statusField.IsVisible = false;
+
+            // Delay the data fetch to happen after page is displayed
+            Device.BeginInvokeOnMainThread(async () => {
+                await Task.Delay(100); // Small delay to ensure UI is ready
+                await FetchJsonDataAsync();
+            });
         }
 
-        async void FetchJsonData()
+        async Task FetchJsonDataAsync()
         {
-            HttpClient httpClient = new HttpClient();
-            var uri = new Uri("https://sahkotin.fi/prices");
-
             try
             {
-                HttpResponseMessage response = await httpClient.GetAsync(uri);
-                response.EnsureSuccessStatusCode();
-                string responseBody = await response.Content.ReadAsStringAsync();
+                using (HttpClient httpClient = new HttpClient())
+                {
+                    httpClient.Timeout = TimeSpan.FromSeconds(30); // Increase timeout
 
-                jsonObject = JObject.Parse(responseBody);
-                UpdateUIWithData();
+                    var uri = new Uri("https://sahkotin.fi/prices");
+
+                    HttpResponseMessage response = await httpClient.GetAsync(uri);
+                    response.EnsureSuccessStatusCode();
+                    string responseBody = await response.Content.ReadAsStringAsync();
+
+                    // Check if response is reasonably sized
+                    if (string.IsNullOrEmpty(responseBody) || responseBody.Length > 10000000) // 10MB limit
+                    {
+                        await DisplayAlert("Virhe datassa", "Palvelimen vastaus on virheellinen tai liian suuri.", "OK");
+                        return;
+                    }
+
+                    try
+                    {
+                        // Use try-catch specifically for JSON parsing
+                        jsonObject = JObject.Parse(responseBody);
+                        if (jsonObject != null && jsonObject["prices"] != null)
+                        {
+                            UpdateUIWithData();
+                        }
+                        else
+                        {
+                            await DisplayAlert("Virhe datassa", "Palvelin palautti virheellisen datan formaatin.", "OK");
+                        }
+                    }
+                    catch (JsonException jsonEx)
+                    {
+                        // Log the first part of the response for debugging
+                        string truncatedResponse = responseBody.Length <= 100
+                            ? responseBody
+                            : responseBody.Substring(0, 100) + "...";
+
+                        Console.WriteLine($"JSON Error: {jsonEx.Message}");
+                        Console.WriteLine($"Response start: {truncatedResponse}");
+
+                        await DisplayAlert("Virhe datan käsittelyssä",
+                                          "Palvelimen vastausta ei voitu käsitellä: " + jsonEx.Message,
+                                          "OK");
+                    }
+                }
             }
-
-            catch (HttpRequestException e)
+            catch (Exception e)
             {
-                await DisplayAlert("Virhe yhteydessä", e.Message.ToString(), "OK");
+                await DisplayAlert("Virhe", e.Message, "OK");
             }
         }
 
@@ -235,7 +275,7 @@ namespace Sahkonhinta_App
         {
             priceFieldNow.Text = "Päivitetään...";
             //priceFieldToday.Text = "";
-            FetchJsonData();
+            FetchJsonDataAsync();
         }
 
         private Task Wait()
