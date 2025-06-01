@@ -22,6 +22,10 @@ namespace Sahkonhinta_App
         double taxPercentage;
         double spotProvision;
         JObject jsonObject = null;
+        bool isChartVisible = false;
+        bool isShowingTomorrow = false;
+        dynamic currentPriceDataToday = null;
+        dynamic currentPriceDataTomorrow = null;
 
         public MainPage()
         {           
@@ -192,7 +196,7 @@ namespace Sahkonhinta_App
                                     });
 
             priceListView.ItemsSource = rowsToday;
-
+            currentPriceDataToday = rowsToday;
 
             ///////////////////////////////////////////////////
             /////           HUOMISEN HINNAT                       /////
@@ -220,6 +224,7 @@ namespace Sahkonhinta_App
                                         });
 
                 priceListViewTomorrow.ItemsSource = rowsTomorrow;
+                currentPriceDataTomorrow = rowsTomorrow;
             }       
 
             //Haetaan kaikki huomisen hinnat listalle laskentaa varten
@@ -235,40 +240,60 @@ namespace Sahkonhinta_App
 
             double dailyAvgTomorrow = pricelistTomorrow.Average(x => x.value);
             avgPriceTomorrow.Text = (dailyAvgTomorrow / 10 * taxPercentage + spotProvision).ToString("F") + " c/kWh";
+
+            // Draw chart if visible
+            if (isChartVisible && currentPriceDataToday != null)
+            {
+                DrawChart(isShowingTomorrow && currentPriceDataTomorrow != null ? currentPriceDataTomorrow : currentPriceDataToday);
+            }
         }
 
         private void pricesTomorrowButton_Clicked(object sender, EventArgs e)
         {            
-            priceFieldLabel.Text = "Hinnat huomenna";
+            isShowingTomorrow = true;
+            priceFieldLabel.Text = "HINNAT HUOMENNA";
 
-            avgLabel.IsVisible = false;
-            avgPrice.IsVisible = false;
-            countedPricesToday.IsVisible = false;
-            priceListView.IsVisible= false;
-            pricesTomorrowButton.IsEnabled=false;
+            // Hide today's data
+            priceListView.IsVisible = false;
+            
+            // Show tomorrow's data
+            priceListViewTomorrowFrame.IsVisible = true;
+            tomorrowAvgStack.IsVisible = true;
+            countedPricesTomorrow.IsVisible = true;
 
-            avgLabelTomorrow.IsVisible=true;
-            avgPriceTomorrow.IsVisible=true;
-            countedPricesTomorrow.IsVisible=true;
-            priceListViewTomorrow.IsVisible = true;
-            pricesTodayButton.IsEnabled = true;
+            // Update button styles
+            pricesTodayButton.Style = (Style)Resources["SecondaryButtonStyle"];
+            pricesTomorrowButton.Style = (Style)Resources["ModernButtonStyle"];
+
+            // Update chart if visible
+            if (isChartVisible)
+            {
+                UpdateUIWithData();
+            }
         }
 
         private void pricesTodayButton_Clicked(object sender, EventArgs e)
         {
-            priceFieldLabel.Text = "Hinnat tänään";
+            isShowingTomorrow = false;
+            priceFieldLabel.Text = "HINNAT TÄNÄÄN";
 
-            avgLabel.IsVisible = true;
-            avgPrice.IsVisible = true;
-            countedPricesToday.IsVisible = true;
+            // Show today's data
             priceListView.IsVisible = true;
-            pricesTomorrowButton.IsEnabled = true;
-
-            avgLabelTomorrow.IsVisible = false;
-            avgPriceTomorrow.IsVisible = false;
+            
+            // Hide tomorrow's data
+            priceListViewTomorrowFrame.IsVisible = false;
+            tomorrowAvgStack.IsVisible = false;
             countedPricesTomorrow.IsVisible = false;
-            priceListViewTomorrow.IsVisible = false;
-            pricesTodayButton.IsEnabled=false;
+
+            // Update button styles
+            pricesTodayButton.Style = (Style)Resources["ModernButtonStyle"];
+            pricesTomorrowButton.Style = (Style)Resources["SecondaryButtonStyle"];
+
+            // Update chart if visible
+            if (isChartVisible)
+            {
+                UpdateUIWithData();
+            }
         }
 
         private void reloadButton_Clicked(object sender, EventArgs e)
@@ -306,15 +331,15 @@ namespace Sahkonhinta_App
             tax24.IsEnabled = true;
             button.IsEnabled = false;
 
-            if (buttonText == "ALV 0%")
+            if (buttonText == "0%")
             {
                 taxPercentage = 1;
             }
-            else if (buttonText == "ALV 10%")
+            else if (buttonText == "10%")
             {
                 taxPercentage = 1.10;
             }
-            else if (buttonText == "ALV 24%")
+            else if (buttonText == "24%")
             {
                 taxPercentage = 1.24;
             }
@@ -359,6 +384,95 @@ namespace Sahkonhinta_App
                     CurrentPage = Children.First(x => x.Title == "HINNAT");
                 }
             }
+        }
+
+        private void toggleChartButton_Clicked(object sender, EventArgs e)
+        {
+            isChartVisible = !isChartVisible;
+            chartFrame.IsVisible = isChartVisible;
+            toggleChartButton.Text = isChartVisible ? "Piilota kaavio" : "Näytä kaavio";
+            
+            if (isChartVisible)
+            {
+                UpdateUIWithData();
+            }
+        }
+
+        private void DrawChart(dynamic priceData)
+        {
+            chartContainer.Children.Clear();
+
+            var priceList = new List<dynamic>(priceData);
+            if (priceList.Count == 0) return;
+
+            double maxPrice = priceList.Max(p => (double)p.value);
+            double minPrice = priceList.Min(p => (double)p.value);
+            double priceRange = maxPrice - minPrice;
+            if (priceRange == 0) priceRange = 1;
+
+            double chartWidth = chartContainer.WidthRequest > 0 ? chartContainer.WidthRequest : 350;
+            double chartHeight = chartContainer.HeightRequest;
+            double barWidth = chartWidth / priceList.Count;
+            double padding = 10;
+
+            // Draw bars
+            for (int i = 0; i < priceList.Count; i++)
+            {
+                double price = (double)priceList[i].value;
+                double barHeight = ((price - minPrice) / priceRange) * (chartHeight - padding * 2);
+                
+                // Calculate color based on price
+                Color barColor = GetPriceColor(price, minPrice, maxPrice);
+
+                var bar = new BoxView
+                {
+                    Color = barColor,
+                    WidthRequest = barWidth * 0.8,
+                    HeightRequest = barHeight,
+                    VerticalOptions = LayoutOptions.End
+                };
+
+                AbsoluteLayout.SetLayoutBounds(bar, new Rectangle(
+                    i * barWidth + barWidth * 0.1, 
+                    chartHeight - barHeight - padding, 
+                    barWidth * 0.8, 
+                    barHeight
+                ));
+                AbsoluteLayout.SetLayoutFlags(bar, AbsoluteLayoutFlags.None);
+                chartContainer.Children.Add(bar);
+
+                // Add hour label
+                var hour = ((DateTime)priceList[i].date).Hour;
+                var label = new Label
+                {
+                    Text = hour.ToString(),
+                    FontSize = 10,
+                    HorizontalTextAlignment = TextAlignment.Center,
+                    TextColor = Application.Current.RequestedTheme == OSAppTheme.Dark ? Color.White : Color.Black
+                };
+
+                AbsoluteLayout.SetLayoutBounds(label, new Rectangle(
+                    i * barWidth, 
+                    chartHeight - 8, 
+                    barWidth, 
+                    15
+                ));
+                AbsoluteLayout.SetLayoutFlags(label, AbsoluteLayoutFlags.None);
+                chartContainer.Children.Add(label);
+            }
+        }
+
+        private Color GetPriceColor(double price, double min, double max)
+        {
+            double range = max - min;
+            double position = (price - min) / range;
+            
+            if (position < 0.33)
+                return Color.FromHex("#27AE60"); // Green
+            else if (position < 0.66)
+                return Color.FromHex("#F39C12"); // Orange
+            else
+                return Color.FromHex("#E74C3C"); // Red
         }
     }
 }
