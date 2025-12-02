@@ -9,6 +9,7 @@ using System.Collections.ObjectModel;
 using Xamarin.Essentials;
 using System.Threading.Tasks;
 using System.Text.RegularExpressions;
+using Sahkonhinta_App.Services;
 
 namespace Sahkonhinta_App
 {
@@ -66,54 +67,20 @@ namespace Sahkonhinta_App
             });
         }
 
-        async Task FetchJsonDataAsync()
+        async Task FetchJsonDataAsync(bool forceRefresh = false)
         {
             try
             {
-                using (HttpClient httpClient = new HttpClient())
+                // Use the caching service to get price data
+                jsonObject = await PriceDataService.GetRawPriceDataAsync(forceRefresh);
+
+                if (jsonObject != null && jsonObject["prices"] != null)
                 {
-                    httpClient.Timeout = TimeSpan.FromSeconds(30); // Increase timeout
-
-                    var uri = new Uri("https://sahkotin.fi/prices");
-
-                    HttpResponseMessage response = await httpClient.GetAsync(uri);
-                    response.EnsureSuccessStatusCode();
-                    string responseBody = await response.Content.ReadAsStringAsync();
-
-                    // Check if response is reasonably sized
-                    if (string.IsNullOrEmpty(responseBody) || responseBody.Length > 10000000) // 10MB limit
-                    {
-                        await DisplayAlert("Virhe datassa", "Palvelimen vastaus on virheellinen tai liian suuri.", "OK");
-                        return;
-                    }
-
-                    try
-                    {
-                        // Use try-catch specifically for JSON parsing
-                        jsonObject = JObject.Parse(responseBody);
-                        if (jsonObject != null && jsonObject["prices"] != null)
-                        {
-                            UpdateUIWithData();
-                        }
-                        else
-                        {
-                            await DisplayAlert("Virhe datassa", "Palvelin palautti virheellisen datan formaatin.", "OK");
-                        }
-                    }
-                    catch (JsonException jsonEx)
-                    {
-                        // Log the first part of the response for debugging
-                        string truncatedResponse = responseBody.Length <= 100
-                            ? responseBody
-                            : responseBody.Substring(0, 100) + "...";
-
-                        Console.WriteLine($"JSON Error: {jsonEx.Message}");
-                        Console.WriteLine($"Response start: {truncatedResponse}");
-
-                        await DisplayAlert("Virhe datan käsittelyssä",
-                                          "Palvelimen vastausta ei voitu käsitellä: " + jsonEx.Message,
-                                          "OK");
-                    }
+                    UpdateUIWithData();
+                }
+                else
+                {
+                    await DisplayAlert("Virhe datassa", "Hintatietoja ei voitu hakea.", "OK");
                 }
             }
             catch (Exception e)
@@ -300,7 +267,7 @@ namespace Sahkonhinta_App
         {
             priceFieldNow.Text = "Päivitetään...";
             //priceFieldToday.Text = "";
-            FetchJsonDataAsync();
+            FetchJsonDataAsync(forceRefresh: true);
         }
 
         private Task Wait()
@@ -410,127 +377,155 @@ namespace Sahkonhinta_App
             double priceRange = maxPrice - minPrice;
             if (priceRange == 0) priceRange = 1;
 
-            double chartWidth = chartContainer.WidthRequest > 0 ? chartContainer.WidthRequest : 350;
-            double chartHeight = chartContainer.HeightRequest;
-            double barWidth = chartWidth / priceList.Count;
-            double padding = 20;
-            double bottomPadding = 25;
+            double chartWidth = chartContainer.Width > 0
+                ? chartContainer.Width
+                : Application.Current.MainPage?.Width ?? DeviceDisplay.MainDisplayInfo.Width / DeviceDisplay.MainDisplayInfo.Density;
+            chartWidth = Math.Max(chartWidth, 320);
 
-            // Add price scale labels on the left
-            var maxPriceLabel = new Label
+            double chartHeight = chartContainer.Height > 0 ? chartContainer.Height : chartContainer.HeightRequest;
+            if (chartHeight <= 0)
             {
-                Text = $"{maxPrice:0.00}",
-                FontSize = 10,
-                TextColor = Application.Current.RequestedTheme == OSAppTheme.Dark ? Color.White : Color.Black,
-                HorizontalTextAlignment = TextAlignment.End
-            };
-            AbsoluteLayout.SetLayoutBounds(maxPriceLabel, new Rectangle(0, padding - 5, 35, 15));
-            AbsoluteLayout.SetLayoutFlags(maxPriceLabel, AbsoluteLayoutFlags.None);
-            chartContainer.Children.Add(maxPriceLabel);
+                chartHeight = 220;
+            }
 
-            var midPrice = (maxPrice + minPrice) / 2;
-            var midPriceLabel = new Label
-            {
-                Text = $"{midPrice:0.00}",
-                FontSize = 10,
-                TextColor = Application.Current.RequestedTheme == OSAppTheme.Dark ? Color.White : Color.Black,
-                HorizontalTextAlignment = TextAlignment.End
-            };
-            AbsoluteLayout.SetLayoutBounds(midPriceLabel, new Rectangle(0, chartHeight / 2 - 5, 35, 15));
-            AbsoluteLayout.SetLayoutFlags(midPriceLabel, AbsoluteLayoutFlags.None);
-            chartContainer.Children.Add(midPriceLabel);
+            const double axisLabelWidth = 44;
+            const double rightPadding = 14;
+            const double topPadding = 20;
+            const double bottomPadding = 32;
 
-            var minPriceLabel = new Label
-            {
-                Text = $"{minPrice:0.00}",
-                FontSize = 10,
-                TextColor = Application.Current.RequestedTheme == OSAppTheme.Dark ? Color.White : Color.Black,
-                HorizontalTextAlignment = TextAlignment.End
-            };
-            AbsoluteLayout.SetLayoutBounds(minPriceLabel, new Rectangle(0, chartHeight - bottomPadding - 5, 35, 15));
-            AbsoluteLayout.SetLayoutFlags(minPriceLabel, AbsoluteLayoutFlags.None);
-            chartContainer.Children.Add(minPriceLabel);
+            double drawableHeight = chartHeight - topPadding - bottomPadding;
+            double drawableWidth = Math.Max(chartWidth - axisLabelWidth - rightPadding, priceList.Count);
+            double slotWidth = drawableWidth / priceList.Count;
+            double barWidth = Math.Min(slotWidth * 0.7, 20);
+            double slotPadding = slotWidth - barWidth;
+            double chartStartX = axisLabelWidth;
 
-            // Draw bars with adjusted position for scale
-            double chartStartX = 40; // Start after price labels
-            double adjustedChartWidth = chartWidth - chartStartX;
-            double adjustedBarWidth = adjustedChartWidth / priceList.Count;
+            bool isDarkTheme = Application.Current.RequestedTheme == OSAppTheme.Dark;
+            Color primaryTextColor = isDarkTheme ? Color.White : Color.Black;
+            Color secondaryTextColor = isDarkTheme ? Color.FromHex("#BDC3C7") : Color.FromHex("#7F8C8D");
+            Color axisLineColor = isDarkTheme ? Color.FromHex("#4C5862") : Color.FromHex("#D8E0E6");
+
+            // Horizontal guides (max / mid / min)
+            AddHorizontalGuide(topPadding, drawableWidth, axisLineColor, 1);
+            AddHorizontalGuide(topPadding + drawableHeight / 2, drawableWidth, axisLineColor, 0.8, 0.35);
+            AddHorizontalGuide(topPadding + drawableHeight, drawableWidth, axisLineColor, 1);
+
+            // Price scale labels on the left
+            AddYAxisLabel(maxPrice, new Rectangle(0, topPadding - 10, axisLabelWidth - 6, 16));
+            AddYAxisLabel((maxPrice + minPrice) / 2, new Rectangle(0, topPadding + drawableHeight / 2 - 8, axisLabelWidth - 6, 16));
+            AddYAxisLabel(minPrice, new Rectangle(0, topPadding + drawableHeight - 10, axisLabelWidth - 6, 16));
 
             for (int i = 0; i < priceList.Count; i++)
             {
                 double price = (double)priceList[i].value;
-                double barHeight = ((price - minPrice) / priceRange) * (chartHeight - padding - bottomPadding);
-                
-                // Calculate color based on price
+                double normalized = (price - minPrice) / priceRange;
+                double barHeight = Math.Max(2, normalized * drawableHeight);
+
                 Color barColor = GetPriceColor(price, minPrice, maxPrice);
+                double slotOffset = chartStartX + i * slotWidth + slotPadding / 2;
 
                 var bar = new BoxView
                 {
                     Color = barColor,
-                    WidthRequest = adjustedBarWidth * 0.8,
+                    WidthRequest = barWidth,
                     HeightRequest = barHeight,
-                    VerticalOptions = LayoutOptions.End
+                    CornerRadius = 2
                 };
 
                 AbsoluteLayout.SetLayoutBounds(bar, new Rectangle(
-                    chartStartX + i * adjustedBarWidth + adjustedBarWidth * 0.1, 
-                    chartHeight - barHeight - bottomPadding, 
-                    adjustedBarWidth * 0.8, 
-                    barHeight
-                ));
+                    slotOffset,
+                    topPadding + drawableHeight - barHeight,
+                    barWidth,
+                    barHeight));
                 AbsoluteLayout.SetLayoutFlags(bar, AbsoluteLayoutFlags.None);
                 chartContainer.Children.Add(bar);
 
-                // Add price value on top of each bar
-                var priceLabel = new Label
+                if (barHeight >= 14)
                 {
-                    Text = $"{price:0.0}",
-                    FontSize = 8,
+                    double priceFont = slotWidth >= 18 ? 10 : 8.5;
+                    var priceLabel = new Label
+                    {
+                        Text = $"{price:0.0}",
+                        FontSize = priceFont,
+                        HorizontalTextAlignment = TextAlignment.Center,
+                        TextColor = primaryTextColor,
+                        FontAttributes = FontAttributes.Bold
+                    };
+
+                    AbsoluteLayout.SetLayoutBounds(priceLabel, new Rectangle(
+                        slotOffset,
+                        topPadding + drawableHeight - barHeight - 16,
+                        barWidth,
+                        14));
+                    AbsoluteLayout.SetLayoutFlags(priceLabel, AbsoluteLayoutFlags.None);
+                    chartContainer.Children.Add(priceLabel);
+                }
+
+                int hour = ((DateTime)priceList[i].date).Hour;
+                string hourText = string.Empty;
+                if (slotWidth >= 18 || i % 2 == 0)
+                {
+                    hourText = hour.ToString();
+                }
+                if (slotWidth < 12 && i % 3 != 0)
+                {
+                    hourText = string.Empty;
+                }
+
+                var hourLabel = new Label
+                {
+                    Text = hourText,
+                    FontSize = slotWidth >= 18 ? 11 : 10,
                     HorizontalTextAlignment = TextAlignment.Center,
-                    TextColor = Application.Current.RequestedTheme == OSAppTheme.Dark ? Color.White : Color.Black,
-                    FontAttributes = FontAttributes.Bold
+                    TextColor = primaryTextColor
                 };
 
-                AbsoluteLayout.SetLayoutBounds(priceLabel, new Rectangle(
-                    chartStartX + i * adjustedBarWidth, 
-                    chartHeight - barHeight - bottomPadding - 15, 
-                    adjustedBarWidth, 
-                    12
-                ));
-                AbsoluteLayout.SetLayoutFlags(priceLabel, AbsoluteLayoutFlags.None);
-                chartContainer.Children.Add(priceLabel);
+                AbsoluteLayout.SetLayoutBounds(hourLabel, new Rectangle(
+                    chartStartX + i * slotWidth,
+                    topPadding + drawableHeight + 4,
+                    slotWidth,
+                    14));
+                AbsoluteLayout.SetLayoutFlags(hourLabel, AbsoluteLayoutFlags.None);
+                chartContainer.Children.Add(hourLabel);
+            }
 
-                // Add hour label
-                var hour = ((DateTime)priceList[i].date).Hour;
+            var unitLabel = new Label
+            {
+                Text = "c/kWh",
+                FontSize = 10,
+                TextColor = secondaryTextColor,
+                HorizontalTextAlignment = TextAlignment.Start
+            };
+            AbsoluteLayout.SetLayoutBounds(unitLabel, new Rectangle(4, 4, axisLabelWidth - 8, 16));
+            AbsoluteLayout.SetLayoutFlags(unitLabel, AbsoluteLayoutFlags.None);
+            chartContainer.Children.Add(unitLabel);
+
+            void AddYAxisLabel(double value, Rectangle bounds)
+            {
                 var label = new Label
                 {
-                    Text = hour.ToString(),
+                    Text = $"{value:0.00}",
                     FontSize = 10,
-                    HorizontalTextAlignment = TextAlignment.Center,
-                    TextColor = Application.Current.RequestedTheme == OSAppTheme.Dark ? Color.White : Color.Black
+                    TextColor = secondaryTextColor,
+                    HorizontalTextAlignment = TextAlignment.End
                 };
-
-                AbsoluteLayout.SetLayoutBounds(label, new Rectangle(
-                    chartStartX + i * adjustedBarWidth, 
-                    chartHeight - 10, 
-                    adjustedBarWidth, 
-                    15
-                ));
+                AbsoluteLayout.SetLayoutBounds(label, bounds);
                 AbsoluteLayout.SetLayoutFlags(label, AbsoluteLayoutFlags.None);
                 chartContainer.Children.Add(label);
             }
 
-            // Add unit label
-            var unitLabel = new Label
+            void AddHorizontalGuide(double y, double width, Color color, double thickness = 1, double opacity = 0.25)
             {
-                Text = "c/kWh",
-                FontSize = 9,
-                TextColor = Application.Current.RequestedTheme == OSAppTheme.Dark ? Color.FromHex("#BDC3C7") : Color.FromHex("#7F8C8D"),
-                HorizontalTextAlignment = TextAlignment.Start
-            };
-            AbsoluteLayout.SetLayoutBounds(unitLabel, new Rectangle(5, 5, 50, 15));
-            AbsoluteLayout.SetLayoutFlags(unitLabel, AbsoluteLayoutFlags.None);
-            chartContainer.Children.Add(unitLabel);
+                var line = new BoxView
+                {
+                    Color = color,
+                    Opacity = opacity,
+                    HeightRequest = thickness
+                };
+                AbsoluteLayout.SetLayoutBounds(line, new Rectangle(axisLabelWidth, y, width, thickness));
+                AbsoluteLayout.SetLayoutFlags(line, AbsoluteLayoutFlags.None);
+                chartContainer.Children.Add(line);
+            }
         }
 
         private Color GetPriceColor(double price, double min, double max)

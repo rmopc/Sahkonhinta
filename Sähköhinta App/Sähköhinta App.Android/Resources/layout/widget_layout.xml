@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/widget_background"
+    android:padding="8dp">
+
+    <!-- Header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:paddingBottom="4dp">
+        
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="SähköSpot"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textColor="#3498DB"
+            android:layout_weight="1" />
+            
+        <TextView
+            android:id="@+id/update_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Päivitetty --:--"
+            android:textSize="10sp"
+            android:textColor="#7F8C8D" />
+    </LinearLayout>
+
+    <!-- Current Price Section -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/price_card_background"
+        android:padding="8dp"
+        android:layout_marginBottom="6dp">
+        
+        <TextView
+            android:id="@+id/current_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Hinta nyt"
+            android:textSize="11sp"
+            android:textColor="#7F8C8D" />
+            
+        <TextView
+            android:id="@+id/current_price_value"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="-- c/kWh"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="#2C3E50" />
+    </LinearLayout>
+
+    <!-- Price Chart -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:background="@drawable/chart_background"
+        android:padding="4dp">
+        
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Päivän hinnat"
+            android:textSize="10sp"
+            android:textColor="#7F8C8D"
+            android:paddingBottom="2dp" />
+            
+        <ImageView
+            android:id="@+id/price_chart"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:scaleType="fitCenter" />
+    </LinearLayout>
+
+</LinearLayout>

@@ -63,10 +63,17 @@
     </PackageReference>
     <PackageReference Include="Xamarin.Forms" Version="5.0.0.2515" />
     <PackageReference Include="Xamarin.Essentials" Version="1.7.3" />
+    <PackageReference Include="Xamarin.AndroidX.Lifecycle.LiveData" Version="2.6.2.3" />
+    <PackageReference Include="Xamarin.AndroidX.Lifecycle.LiveData.Core" Version="2.6.2.3" />
+    <PackageReference Include="Xamarin.AndroidX.Lifecycle.Runtime" Version="2.6.2.3" />
+    <PackageReference Include="Xamarin.AndroidX.Work.Runtime" Version="2.9.0" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="MainActivity.cs" />
+    <Compile Include="NotificationHelper.cs" />
+    <Compile Include="PriceWidgetProvider.cs" />
     <Compile Include="Resources\Resource.designer.cs" />
+    <Compile Include="WidgetUpdateService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -93,6 +100,12 @@
     <AndroidResource Include="Resources\mipmap-xxhdpi\launcher_foreground.png" />
     <AndroidResource Include="Resources\mipmap-xxxhdpi\icon.png" />
     <AndroidResource Include="Resources\mipmap-xxxhdpi\launcher_foreground.png" />
+    <AndroidResource Include="Resources\drawable\chart_background.xml" />
+    <AndroidResource Include="Resources\drawable\price_card_background.xml" />
+    <AndroidResource Include="Resources\drawable\widget_background.xml" />
+    <AndroidResource Include="Resources\drawable\ic_stat_electric.xml" />
+    <AndroidResource Include="Resources\xml\widget_info.xml" />
+    <AndroidResource Include="Resources\layout\widget_layout.xml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Resources\drawable\" />
