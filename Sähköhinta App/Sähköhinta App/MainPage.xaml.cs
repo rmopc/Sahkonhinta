@@ -22,7 +22,8 @@ namespace Sahkonhinta_App
 
         double taxPercentage;
         double spotProvision;
-        JObject jsonObject = null;
+        DayPriceData todayData = null;
+        DayPriceData tomorrowData = null;
         bool isChartVisible = false;
         bool isShowingTomorrow = false;
         dynamic currentPriceDataToday = null;
@@ -72,9 +73,9 @@ namespace Sahkonhinta_App
             try
             {
                 // Use the caching service to get price data
-                jsonObject = await PriceDataService.GetRawPriceDataAsync(forceRefresh);
+                (todayData, tomorrowData) = await PriceDataService.GetPriceDataAsync(forceRefresh);
 
-                if (jsonObject != null && jsonObject["prices"] != null)
+                if (todayData != null && todayData.Prices != null && todayData.Prices.Any())
                 {
                     UpdateUIWithData();
                 }
@@ -91,122 +92,92 @@ namespace Sahkonhinta_App
 
         void UpdateUIWithData()
         {
-            if (jsonObject == null)
+            if (todayData == null || todayData.Prices == null || !todayData.Prices.Any())
                 return;
 
-            var prices = jsonObject["prices"];
-            var jsonArray = JArray.Parse(prices.ToString());
-
-            DateTime startDateTime = DateTime.Today; //Tänään klo 00:00:00                     
-            DateTime endDateTime = DateTime.Today.AddDays(1).AddTicks(-1); //Tänään klo 23:59:59            
-            DateTime startDateTimeTomorrow = DateTime.Today.AddDays(1); //Huomenna klo 00:00:00
-            DateTime endDateTimeTomorrow = DateTime.Today.AddDays(2).AddTicks(-1); //Huomenna klo 23:59:59
-            DateTime date = DateTime.MinValue;
-
-            string todayHour = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, localTimeZone).ToString("M/d/yyyy HH");
-
-            List<Price> pricelist = JsonConvert.DeserializeObject<List<Price>>(jsonArray.ToString());
-            List<Price> pricelistTomorrow = JsonConvert.DeserializeObject<List<Price>>(jsonArray.ToString());
-            ObservableCollection<Price> pricedata = new ObservableCollection<Price>(pricelist);
-
+            var nowLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, localTimeZone);
+            var currentHour = nowLocal.Hour;
 
             ///////////////////////////////////////////////////
-            /////           KULUVAN PÄIVÄN HINNAT           /////
+            /////           TODAY'S PRICES (FULL 24H)       /////
             //////////////////////////////////////////////////
-            
-            //Haetaan kaikki kuluvan päivän hinnat listalle laskentaa varten
-            pricelist = pricelist.Where(x => TimeZoneInfo.ConvertTimeFromUtc(x.date, localTimeZone) >= startDateTime &&
-                                                                    TimeZoneInfo.ConvertTimeFromUtc(x.date, localTimeZone) <= endDateTime).ToList();            
 
-            //Vuorokauden ylin, alin ja keskihinta sekä niiden asetus tekstikenttiin
-            var dailyMax = pricelist.Max(x => x.value);
-            highPrice.Text = (dailyMax / 10 * taxPercentage + spotProvision).ToString("F") + " c/kWh";
+            // Always display full 24-hour period (00:00-23:00) for today
+            var todayPrices = todayData.Prices;
+            bool isTodayComplete = todayData.IsComplete;
 
-            var dailyMin = pricelist.Min(x => x.value);
-            lowPrice.Text = (dailyMin / 10 * taxPercentage + spotProvision).ToString("F") + " c/kWh";
+            // Calculate statistics
+            var dailyMax = todayPrices.Max(x => x.value);
+            var dailyMin = todayPrices.Min(x => x.value);
+            var dailyAvg = todayPrices.Average(x => x.value);
 
-            double dailyAvg = pricelist.Average(x => x.value);
-            avgPrice.Text = (dailyAvg / 10 * taxPercentage + spotProvision).ToString("F") + " c/kWh";
+            // Add asterisk if data is incomplete
+            string asterisk = isTodayComplete ? "" : "*";
 
-            //Haetaan kuluvan tunnin hinta
-            foreach (var item in jsonArray)
+            highPrice.Text = $"{(dailyMax / 10 * taxPercentage + spotProvision):F} c/kWh{asterisk}";
+            lowPrice.Text = $"{(dailyMin / 10 * taxPercentage + spotProvision):F} c/kWh{asterisk}";
+            avgPrice.Text = $"{(dailyAvg / 10 * taxPercentage + spotProvision):F} c/kWh{asterisk}";
+
+            // Find current hour price
+            var currentPrice = todayPrices.FirstOrDefault(x =>
+                TimeZoneInfo.ConvertTimeFromUtc(x.date, localTimeZone).Hour == currentHour);
+
+            if (currentPrice != null)
             {
-                if (DateTime.TryParse(item["date"].ToString(), out date))
-                {
-                    date = DateTime.SpecifyKind(date, DateTimeKind.Utc);
-                    DateTime localDate = TimeZoneInfo.ConvertTimeFromUtc(date, localTimeZone);
-
-                    // Tämänhetkinen, eli kuluvan tunnin hinta
-                    if (localDate.ToString("M/d/yyyy HH") == todayHour)
-                    {
-                        string price = item["value"].ToString();
-                        double price2 = double.Parse(price);
-                        priceFieldNow.Text = "Hinta nyt: " + (price2 / 10 * taxPercentage + spotProvision).ToString("F") + " c/kWh";
-                    }
-                }
+                priceFieldNow.Text = $"Hinta nyt: {(currentPrice.value / 10 * taxPercentage + spotProvision):F} c/kWh";
+            }
+            else
+            {
+                priceFieldNow.Text = "Hinta nyt: - c/kWh";
             }
 
-            // Kesä-/talviaika
-            bool isDstToday = localTimeZone.IsDaylightSavingTime(startDateTime);
-
-            //Luodaan muuttuja joka sisältää kaikki tämän vuodokauden tunnit
-            var hours = isDstToday
-                ? Enumerable.Range(-3, 24).Select(i => startDateTime.AddHours(i)) // DST logic
-                : Enumerable.Range(-2, 24).Select(i => startDateTime.AddHours(i)); // Standard time logic
-
-            // Kaikki kuluvan vuorokauden tunnit
-            var rowsToday = pricedata.Where(x => hours.Contains(x.date))
-                                    .Select(x => new
-                                    {
-                                        date = TimeZoneInfo.ConvertTimeFromUtc(x.date, localTimeZone),
-                                        value = x.value / 10 * taxPercentage + spotProvision
-                                    });
+            // Prepare display data with converted timezone and applied tax
+            var rowsToday = todayPrices.Select(x => new
+            {
+                date = TimeZoneInfo.ConvertTimeFromUtc(x.date, localTimeZone),
+                value = x.value / 10 * taxPercentage + spotProvision
+            }).OrderBy(x => x.date).ToList();
 
             priceListView.ItemsSource = rowsToday;
             currentPriceDataToday = rowsToday;
 
             ///////////////////////////////////////////////////
-            /////           HUOMISEN HINNAT                       /////
+            /////           TOMORROW'S PRICES (FULL 24H)    /////
             //////////////////////////////////////////////////
 
-            //Tarkistetaan jos huomisen hinnat näkyy
-            if (date.ToShortDateString().Contains(today.AddDays(1).ToShortDateString()))
+            if (tomorrowData != null && tomorrowData.Prices != null && tomorrowData.Prices.Any())
             {
                 pricesTomorrowButton.IsEnabled = true;
 
-               // Kesä-/talviaika
-                bool isDstTomorrow = localTimeZone.IsDaylightSavingTime(startDateTimeTomorrow);
-                
-                // Luodaan muuttuja joka sisältää kaikki huomisen vuodokauden tunnit
-                var hoursTomorrow = isDstTomorrow
-                    ? Enumerable.Range(-3, 24).Select(i => startDateTimeTomorrow.AddHours(i)) // DST logic
-                    : Enumerable.Range(-2, 24).Select(i => startDateTimeTomorrow.AddHours(i)); // Standard time logic
+                var tomorrowPrices = tomorrowData.Prices;
+                bool isTomorrowComplete = tomorrowData.IsComplete;
 
-                // Kaikki huomisen tunnit
-                var rowsTomorrow = pricedata.Where(x => hoursTomorrow.Contains(x.date))
-                                        .Select(x => new
-                                        {
-                                            date = TimeZoneInfo.ConvertTimeFromUtc(x.date, localTimeZone),
-                                            value = x.value / 10 * taxPercentage + spotProvision
-                                        });
+                // Calculate tomorrow's statistics
+                var dailyMaxTomorrow = tomorrowPrices.Max(x => x.value);
+                var dailyMinTomorrow = tomorrowPrices.Min(x => x.value);
+                var dailyAvgTomorrow = tomorrowPrices.Average(x => x.value);
+
+                // Add asterisk if data is incomplete
+                string asteriskTomorrow = isTomorrowComplete ? "" : "*";
+
+                highPriceTomorrow.Text = $"{(dailyMaxTomorrow / 10 * taxPercentage + spotProvision):F} c/kWh{asteriskTomorrow}";
+                lowPriceTomorrow.Text = $"{(dailyMinTomorrow / 10 * taxPercentage + spotProvision):F} c/kWh{asteriskTomorrow}";
+                avgPriceTomorrow.Text = $"{(dailyAvgTomorrow / 10 * taxPercentage + spotProvision):F} c/kWh{asteriskTomorrow}";
+
+                // Prepare display data
+                var rowsTomorrow = tomorrowPrices.Select(x => new
+                {
+                    date = TimeZoneInfo.ConvertTimeFromUtc(x.date, localTimeZone),
+                    value = x.value / 10 * taxPercentage + spotProvision
+                }).OrderBy(x => x.date).ToList();
 
                 priceListViewTomorrow.ItemsSource = rowsTomorrow;
                 currentPriceDataTomorrow = rowsTomorrow;
-            }       
-
-            //Haetaan kaikki huomisen hinnat listalle laskentaa varten
-            pricelistTomorrow = pricelistTomorrow.Where(x => TimeZoneInfo.ConvertTimeFromUtc(x.date, localTimeZone) >= startDateTimeTomorrow &&
-                                                                                                           TimeZoneInfo.ConvertTimeFromUtc(x.date, localTimeZone) <= endDateTimeTomorrow).ToList();
-
-            //Huomisen ylin, alin ja keskihinta sekä niiden asetus tekstikenttiin
-            var dailyMaxTomorrow = pricelistTomorrow.Max(x => x.value);
-            highPriceTomorrow.Text = (dailyMaxTomorrow / 10 * taxPercentage + spotProvision).ToString("F") + " c/kWh";
-
-            var dailyMinTomorrow = pricelistTomorrow.Min(x => x.value);
-            lowPriceTomorrow.Text = (dailyMinTomorrow / 10 * taxPercentage + spotProvision).ToString("F") + " c/kWh";
-
-            double dailyAvgTomorrow = pricelistTomorrow.Average(x => x.value);
-            avgPriceTomorrow.Text = (dailyAvgTomorrow / 10 * taxPercentage + spotProvision).ToString("F") + " c/kWh";
+            }
+            else
+            {
+                pricesTomorrowButton.IsEnabled = false;
+            }
 
             // Draw chart if visible
             if (isChartVisible && currentPriceDataToday != null)
@@ -277,14 +248,17 @@ namespace Sahkonhinta_App
 
         private void UpdateTaxLabel()
         {
+            string baseText;
             if (spotProvision != 0)
             {
-                taxLabel.Text = "Kaikki hinnat alv " + (taxPercentage - 1) * 100 + "%, sis. spot-provision " + spotProvision + " c/kWh";
+                baseText = "Kaikki hinnat alv " + (taxPercentage - 1) * 100 + "%, sis. spot-provision " + spotProvision + " c/kWh";
             }
             else
             {
-                taxLabel.Text = "Kaikki hinnat alv " + (taxPercentage - 1) * 100 + "%";
+                baseText = "Kaikki hinnat alv " + (taxPercentage - 1) * 100 + "%";
             }
+
+            taxLabel.Text = baseText + "\n* = Laskettu alle 24 tunnin datasta";
         }
 
         private async void tax_Clicked(object sender, EventArgs e)
@@ -377,10 +351,16 @@ namespace Sahkonhinta_App
             double priceRange = maxPrice - minPrice;
             if (priceRange == 0) priceRange = 1;
 
-            double chartWidth = chartContainer.Width > 0
+            // Get actual container width, with a reasonable fallback
+            double chartWidth = chartContainer.Width > 0 && chartContainer.Width < 10000
                 ? chartContainer.Width
-                : Application.Current.MainPage?.Width ?? DeviceDisplay.MainDisplayInfo.Width / DeviceDisplay.MainDisplayInfo.Density;
-            chartWidth = Math.Max(chartWidth, 320);
+                : (Application.Current.MainPage?.Width ?? 360) - 70; // Account for frame margins/padding
+
+            // Ensure we have a reasonable width
+            if (chartWidth <= 0 || chartWidth > 10000)
+            {
+                chartWidth = 320;
+            }
 
             double chartHeight = chartContainer.Height > 0 ? chartContainer.Height : chartContainer.HeightRequest;
             if (chartHeight <= 0)
@@ -388,15 +368,18 @@ namespace Sahkonhinta_App
                 chartHeight = 220;
             }
 
-            const double axisLabelWidth = 44;
-            const double rightPadding = 14;
+            const double axisLabelWidth = 40;
+            const double rightPadding = 8;
             const double topPadding = 20;
             const double bottomPadding = 32;
 
+            // Calculate drawable area - MUST stay within container bounds
+            double drawableWidth = chartWidth - axisLabelWidth - rightPadding;
             double drawableHeight = chartHeight - topPadding - bottomPadding;
-            double drawableWidth = Math.Max(chartWidth - axisLabelWidth - rightPadding, priceList.Count);
+
+            // Calculate bar dimensions
             double slotWidth = drawableWidth / priceList.Count;
-            double barWidth = Math.Min(slotWidth * 0.7, 20);
+            double barWidth = Math.Max(2, Math.Min(slotWidth * 0.75, 18));
             double slotPadding = slotWidth - barWidth;
             double chartStartX = axisLabelWidth;
 
@@ -405,24 +388,30 @@ namespace Sahkonhinta_App
             Color secondaryTextColor = isDarkTheme ? Color.FromHex("#BDC3C7") : Color.FromHex("#7F8C8D");
             Color axisLineColor = isDarkTheme ? Color.FromHex("#4C5862") : Color.FromHex("#D8E0E6");
 
-            // Horizontal guides (max / mid / min)
+            // Horizontal guides (max / mid / min) - ensure they don't exceed drawable width
             AddHorizontalGuide(topPadding, drawableWidth, axisLineColor, 1);
             AddHorizontalGuide(topPadding + drawableHeight / 2, drawableWidth, axisLineColor, 0.8, 0.35);
             AddHorizontalGuide(topPadding + drawableHeight, drawableWidth, axisLineColor, 1);
 
             // Price scale labels on the left
-            AddYAxisLabel(maxPrice, new Rectangle(0, topPadding - 10, axisLabelWidth - 6, 16));
-            AddYAxisLabel((maxPrice + minPrice) / 2, new Rectangle(0, topPadding + drawableHeight / 2 - 8, axisLabelWidth - 6, 16));
-            AddYAxisLabel(minPrice, new Rectangle(0, topPadding + drawableHeight - 10, axisLabelWidth - 6, 16));
+            AddYAxisLabel(maxPrice, new Rectangle(0, topPadding - 10, axisLabelWidth - 4, 16));
+            AddYAxisLabel((maxPrice + minPrice) / 2, new Rectangle(0, topPadding + drawableHeight / 2 - 8, axisLabelWidth - 4, 16));
+            AddYAxisLabel(minPrice, new Rectangle(0, topPadding + drawableHeight - 10, axisLabelWidth - 4, 16));
 
             for (int i = 0; i < priceList.Count; i++)
             {
                 double price = (double)priceList[i].value;
                 double normalized = (price - minPrice) / priceRange;
-                double barHeight = Math.Max(2, normalized * drawableHeight);
+                double barHeight = Math.Max(3, normalized * drawableHeight);
 
                 Color barColor = GetPriceColor(price, minPrice, maxPrice);
                 double slotOffset = chartStartX + i * slotWidth + slotPadding / 2;
+
+                // Ensure bar doesn't exceed container bounds
+                if (slotOffset + barWidth > chartWidth)
+                {
+                    barWidth = Math.Max(2, chartWidth - slotOffset - rightPadding);
+                }
 
                 var bar = new BoxView
                 {
@@ -440,9 +429,10 @@ namespace Sahkonhinta_App
                 AbsoluteLayout.SetLayoutFlags(bar, AbsoluteLayoutFlags.None);
                 chartContainer.Children.Add(bar);
 
-                if (barHeight >= 14)
+                // Show price label above taller bars
+                if (barHeight >= 18 && slotWidth >= 12)
                 {
-                    double priceFont = slotWidth >= 18 ? 10 : 8.5;
+                    double priceFont = slotWidth >= 16 ? 9 : 8;
                     var priceLabel = new Label
                     {
                         Text = $"{price:0.0}",
@@ -454,49 +444,61 @@ namespace Sahkonhinta_App
 
                     AbsoluteLayout.SetLayoutBounds(priceLabel, new Rectangle(
                         slotOffset,
-                        topPadding + drawableHeight - barHeight - 16,
+                        topPadding + drawableHeight - barHeight - 14,
                         barWidth,
-                        14));
+                        12));
                     AbsoluteLayout.SetLayoutFlags(priceLabel, AbsoluteLayoutFlags.None);
                     chartContainer.Children.Add(priceLabel);
                 }
 
+                // Hour labels at bottom
                 int hour = ((DateTime)priceList[i].date).Hour;
                 string hourText = string.Empty;
-                if (slotWidth >= 18 || i % 2 == 0)
+
+                // Show all hours if space allows, otherwise show every 2nd or 3rd
+                if (slotWidth >= 14)
                 {
                     hourText = hour.ToString();
                 }
-                if (slotWidth < 12 && i % 3 != 0)
+                else if (slotWidth >= 10 && i % 2 == 0)
                 {
-                    hourText = string.Empty;
+                    hourText = hour.ToString();
+                }
+                else if (slotWidth >= 6 && i % 3 == 0)
+                {
+                    hourText = hour.ToString();
                 }
 
-                var hourLabel = new Label
+                if (!string.IsNullOrEmpty(hourText))
                 {
-                    Text = hourText,
-                    FontSize = slotWidth >= 18 ? 11 : 10,
-                    HorizontalTextAlignment = TextAlignment.Center,
-                    TextColor = primaryTextColor
-                };
+                    var hourLabel = new Label
+                    {
+                        Text = hourText,
+                        FontSize = slotWidth >= 14 ? 10 : 9,
+                        HorizontalTextAlignment = TextAlignment.Center,
+                        TextColor = secondaryTextColor
+                    };
 
-                AbsoluteLayout.SetLayoutBounds(hourLabel, new Rectangle(
-                    chartStartX + i * slotWidth,
-                    topPadding + drawableHeight + 4,
-                    slotWidth,
-                    14));
-                AbsoluteLayout.SetLayoutFlags(hourLabel, AbsoluteLayoutFlags.None);
-                chartContainer.Children.Add(hourLabel);
+                    AbsoluteLayout.SetLayoutBounds(hourLabel, new Rectangle(
+                        slotOffset - slotPadding / 2,
+                        topPadding + drawableHeight + 4,
+                        slotWidth,
+                        14));
+                    AbsoluteLayout.SetLayoutFlags(hourLabel, AbsoluteLayoutFlags.None);
+                    chartContainer.Children.Add(hourLabel);
+                }
             }
 
+            // Unit label in top-left corner
             var unitLabel = new Label
             {
                 Text = "c/kWh",
-                FontSize = 10,
+                FontSize = 9,
                 TextColor = secondaryTextColor,
-                HorizontalTextAlignment = TextAlignment.Start
+                HorizontalTextAlignment = TextAlignment.Start,
+                VerticalTextAlignment = TextAlignment.Start
             };
-            AbsoluteLayout.SetLayoutBounds(unitLabel, new Rectangle(4, 4, axisLabelWidth - 8, 16));
+            AbsoluteLayout.SetLayoutBounds(unitLabel, new Rectangle(2, 2, axisLabelWidth - 4, 16));
             AbsoluteLayout.SetLayoutFlags(unitLabel, AbsoluteLayoutFlags.None);
             chartContainer.Children.Add(unitLabel);
 
@@ -504,10 +506,11 @@ namespace Sahkonhinta_App
             {
                 var label = new Label
                 {
-                    Text = $"{value:0.00}",
-                    FontSize = 10,
+                    Text = $"{value:0.0}",
+                    FontSize = 9,
                     TextColor = secondaryTextColor,
-                    HorizontalTextAlignment = TextAlignment.End
+                    HorizontalTextAlignment = TextAlignment.End,
+                    VerticalTextAlignment = TextAlignment.Center
                 };
                 AbsoluteLayout.SetLayoutBounds(label, bounds);
                 AbsoluteLayout.SetLayoutFlags(label, AbsoluteLayoutFlags.None);
@@ -522,7 +525,8 @@ namespace Sahkonhinta_App
                     Opacity = opacity,
                     HeightRequest = thickness
                 };
-                AbsoluteLayout.SetLayoutBounds(line, new Rectangle(axisLabelWidth, y, width, thickness));
+                // Ensure guide line stays within bounds
+                AbsoluteLayout.SetLayoutBounds(line, new Rectangle(chartStartX, y, width, thickness));
                 AbsoluteLayout.SetLayoutFlags(line, AbsoluteLayoutFlags.None);
                 chartContainer.Children.Add(line);
             }
