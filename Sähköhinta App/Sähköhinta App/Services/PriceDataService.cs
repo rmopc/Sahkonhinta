@@ -5,7 +5,6 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using Xamarin.Essentials;
 
 namespace Sahkonhinta_App.Services
 {
@@ -13,16 +12,11 @@ namespace Sahkonhinta_App.Services
     {
         public DateTime Date { get; set; }
         public List<Price> Prices { get; set; }
-        public bool IsComplete => Prices != null && Prices.Count == 24;
     }
 
     public class PriceDataService
     {
-        private const string CACHE_KEY_TODAY_DATA = "CachedTodayPriceData";
-        private const string CACHE_KEY_TODAY_DATE = "CachedTodayDate";
-        private const string CACHE_KEY_TOMORROW_DATA = "CachedTomorrowPriceData";
-        private const string CACHE_KEY_TOMORROW_DATE = "CachedTomorrowDate";
-        private const string CACHE_KEY_LAST_FETCH = "LastFetchTimestamp";
+        private const string API_URL = "https://oljemark.net/electricity_prices.json";
 
         public static async Task<(DayPriceData today, DayPriceData tomorrow)> GetPriceDataAsync(bool forceRefresh = false)
         {
@@ -33,205 +27,110 @@ namespace Sahkonhinta_App.Services
                 var todayLocal = nowLocal.Date;
                 var tomorrowLocal = todayLocal.AddDays(1);
 
-                // Check cached dates
-                var cachedTodayDateStr = Preferences.Get(CACHE_KEY_TODAY_DATE, "");
-                var cachedTomorrowDateStr = Preferences.Get(CACHE_KEY_TOMORROW_DATE, "");
-                var lastFetchTime = Preferences.Get(CACHE_KEY_LAST_FETCH, 0L);
-
-                // Check if midnight has passed and we need to rotate data
-                bool needsRotation = !string.IsNullOrEmpty(cachedTomorrowDateStr) &&
-                                     cachedTomorrowDateStr == todayLocal.ToString("yyyy-MM-dd");
-
-                if (needsRotation)
-                {
-                    RotateTomorrowToToday();
-                    cachedTodayDateStr = Preferences.Get(CACHE_KEY_TODAY_DATE, "");
-                    cachedTomorrowDateStr = Preferences.Get(CACHE_KEY_TOMORROW_DATE, "");
-                }
-
-                // Load cached data
-                DayPriceData cachedToday = LoadCachedDay(CACHE_KEY_TODAY_DATA, cachedTodayDateStr, todayLocal);
-                DayPriceData cachedTomorrow = LoadCachedDay(CACHE_KEY_TOMORROW_DATA, cachedTomorrowDateStr, tomorrowLocal);
-
-                bool haveTodayData = cachedToday != null && cachedToday.IsComplete;
-                bool haveTomorrowData = cachedTomorrow != null;
-
-                // Determine if we should fetch fresh data
-                bool shouldFetch = forceRefresh || !haveTodayData;
-
-                // After 14:00 Finnish time, check for tomorrow's data once per hour if we don't have it
-                if (!shouldFetch && nowLocal.Hour >= 14 && !haveTomorrowData)
-                {
-                    var timeSinceLastFetch = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - lastFetchTime;
-                    var oneHourInMs = 60 * 60 * 1000;
-                    if (timeSinceLastFetch > oneHourInMs)
-                    {
-                        shouldFetch = true;
-                    }
-                }
-
-                if (shouldFetch)
-                {
-                    var (fetchedToday, fetchedTomorrow) = await FetchAndCachePriceDataAsync(todayLocal, tomorrowLocal);
-
-                    if (fetchedToday != null || fetchedTomorrow != null)
-                    {
-                        // Use fetched data if available, otherwise keep cached
-                        cachedToday = fetchedToday ?? cachedToday;
-                        cachedTomorrow = fetchedTomorrow ?? cachedTomorrow;
-                    }
-                }
-
-                // If we still don't have today's data, try one more fetch without caching constraints
-                if (cachedToday == null || !cachedToday.IsComplete)
-                {
-                    var (fetchedToday, fetchedTomorrow) = await FetchAndCachePriceDataAsync(todayLocal, tomorrowLocal);
-                    cachedToday = fetchedToday ?? cachedToday;
-                    cachedTomorrow = fetchedTomorrow ?? cachedTomorrow;
-                }
-
-                return (cachedToday, cachedTomorrow);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error in GetPriceDataAsync: {ex.Message}");
-
-                // Try to return cached data as fallback
-                var todayLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("Europe/Helsinki")).Date;
-                var tomorrowLocal = todayLocal.AddDays(1);
-
-                var cachedTodayDateStr = Preferences.Get(CACHE_KEY_TODAY_DATE, "");
-                var cachedTomorrowDateStr = Preferences.Get(CACHE_KEY_TOMORROW_DATE, "");
-
-                var cachedToday = LoadCachedDay(CACHE_KEY_TODAY_DATA, cachedTodayDateStr, todayLocal);
-                var cachedTomorrow = LoadCachedDay(CACHE_KEY_TOMORROW_DATA, cachedTomorrowDateStr, tomorrowLocal);
-
-                return (cachedToday, cachedTomorrow);
-            }
-        }
-
-        private static void RotateTomorrowToToday()
-        {
-            try
-            {
-                // Move tomorrow's data to today's slot
-                var tomorrowData = Preferences.Get(CACHE_KEY_TOMORROW_DATA, "");
-                var tomorrowDate = Preferences.Get(CACHE_KEY_TOMORROW_DATE, "");
-
-                if (!string.IsNullOrEmpty(tomorrowData) && !string.IsNullOrEmpty(tomorrowDate))
-                {
-                    Preferences.Set(CACHE_KEY_TODAY_DATA, tomorrowData);
-                    Preferences.Set(CACHE_KEY_TODAY_DATE, tomorrowDate);
-
-                    // Clear tomorrow's cache
-                    Preferences.Remove(CACHE_KEY_TOMORROW_DATA);
-                    Preferences.Remove(CACHE_KEY_TOMORROW_DATE);
-
-                    Console.WriteLine($"Rotated tomorrow's data to today: {tomorrowDate}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error rotating data: {ex.Message}");
-            }
-        }
-
-        private static DayPriceData LoadCachedDay(string dataKey, string cachedDateStr, DateTime expectedDate)
-        {
-            try
-            {
-                if (string.IsNullOrEmpty(cachedDateStr) || cachedDateStr != expectedDate.ToString("yyyy-MM-dd"))
-                    return null;
-
-                var jsonData = Preferences.Get(dataKey, "");
-                if (string.IsNullOrEmpty(jsonData))
-                    return null;
-
-                var dayData = JsonConvert.DeserializeObject<DayPriceData>(jsonData);
-                return dayData;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error loading cached day: {ex.Message}");
-                return null;
-            }
-        }
-
-        private static async Task<(DayPriceData today, DayPriceData tomorrow)> FetchAndCachePriceDataAsync(DateTime todayDate, DateTime tomorrowDate)
-        {
-            try
-            {
-                var jsonObject = await FetchRawPriceDataFromApiAsync();
+                var jsonObject = await FetchPriceDataFromApiAsync();
                 if (jsonObject == null)
+                {
+                    Console.WriteLine("Failed to fetch price data from API");
                     return (null, null);
+                }
 
-                var localTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Europe/Helsinki");
-                var prices = jsonObject["prices"];
-                var jsonArray = JArray.Parse(prices.ToString());
-                var allPrices = JsonConvert.DeserializeObject<List<Price>>(jsonArray.ToString());
-
-                // Extract today's prices (full 24 hours from 00:00 to 23:00)
-                var todayPrices = allPrices
-                    .Where(x => TimeZoneInfo.ConvertTimeFromUtc(x.date, localTimeZone).Date == todayDate)
-                    .OrderBy(x => x.date)
-                    .ToList();
-
-                // Extract tomorrow's prices (full 24 hours from 00:00 to 23:00)
-                var tomorrowPrices = allPrices
-                    .Where(x => TimeZoneInfo.ConvertTimeFromUtc(x.date, localTimeZone).Date == tomorrowDate)
-                    .OrderBy(x => x.date)
-                    .ToList();
+                // Parse today's prices from the "today" array
+                var todayArray = jsonObject["today"] as JArray;
+                var todayPrices = ParsePricesFromArray(todayArray, todayLocal);
 
                 DayPriceData todayData = null;
-                DayPriceData tomorrowData = null;
-
-                // Cache today's data if we have any hours
                 if (todayPrices.Any())
                 {
                     todayData = new DayPriceData
                     {
-                        Date = todayDate,
+                        Date = todayLocal,
                         Prices = todayPrices
                     };
-
-                    Preferences.Set(CACHE_KEY_TODAY_DATA, JsonConvert.SerializeObject(todayData));
-                    Preferences.Set(CACHE_KEY_TODAY_DATE, todayDate.ToString("yyyy-MM-dd"));
-                    Console.WriteLine($"Cached today's data: {todayDate:yyyy-MM-dd} ({todayPrices.Count} hours)");
+                    Console.WriteLine($"Loaded today's data: {todayLocal:yyyy-MM-dd} ({todayPrices.Count} hours)");
                 }
 
-                // Cache tomorrow's data if we have any hours
+                // Parse tomorrow's prices from the "tomorrow" array
+                var tomorrowArray = jsonObject["tomorrow"] as JArray;
+                var tomorrowPrices = ParsePricesFromArray(tomorrowArray, tomorrowLocal);
+
+                DayPriceData tomorrowData = null;
                 if (tomorrowPrices.Any())
                 {
                     tomorrowData = new DayPriceData
                     {
-                        Date = tomorrowDate,
+                        Date = tomorrowLocal,
                         Prices = tomorrowPrices
                     };
-
-                    Preferences.Set(CACHE_KEY_TOMORROW_DATA, JsonConvert.SerializeObject(tomorrowData));
-                    Preferences.Set(CACHE_KEY_TOMORROW_DATE, tomorrowDate.ToString("yyyy-MM-dd"));
-                    Console.WriteLine($"Cached tomorrow's data: {tomorrowDate:yyyy-MM-dd} ({tomorrowPrices.Count} hours)");
+                    Console.WriteLine($"Loaded tomorrow's data: {tomorrowLocal:yyyy-MM-dd} ({tomorrowPrices.Count} hours)");
                 }
-
-                Preferences.Set(CACHE_KEY_LAST_FETCH, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
 
                 return (todayData, tomorrowData);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error fetching and caching data: {ex.Message}");
+                Console.WriteLine($"Error in GetPriceDataAsync: {ex.Message}");
                 return (null, null);
             }
         }
 
-        private static async Task<JObject> FetchRawPriceDataFromApiAsync()
+        private static List<Price> ParsePricesFromArray(JArray priceArray, DateTime expectedDate)
+        {
+            var prices = new List<Price>();
+            if (priceArray == null)
+                return prices;
+
+            var localTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Europe/Helsinki");
+
+            foreach (var item in priceArray)
+            {
+                try
+                {
+                    // Parse the datetime field which includes timezone offset
+                    var datetimeStr = item["datetime"]?.ToString();
+                    if (string.IsNullOrEmpty(datetimeStr))
+                        continue;
+
+                    var datetime = DateTimeOffset.Parse(datetimeStr);
+                    var datetimeUtc = datetime.UtcDateTime;
+                    var datetimeLocal = TimeZoneInfo.ConvertTimeFromUtc(datetimeUtc, localTimeZone);
+
+                    // Only include prices that match the expected date
+                    if (datetimeLocal.Date != expectedDate)
+                        continue;
+
+                    // Use price_cents_kwh which is already converted to c/kWh
+                    var priceCentsKwh = (double?)item["price_cents_kwh"];
+                    if (!priceCentsKwh.HasValue)
+                        continue;
+
+                    // Convert back to the internal format (EUR/MWh * 10) for compatibility
+                    // price_cents_kwh is in c/kWh, so multiply by 10 to get EUR/MWh * 10
+                    var priceValue = priceCentsKwh.Value * 10;
+
+                    prices.Add(new Price
+                    {
+                        date = datetimeUtc,
+                        value = priceValue
+                    });
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error parsing price item: {ex.Message}");
+                    continue;
+                }
+            }
+
+            return prices.OrderBy(p => p.date).ToList();
+        }
+
+        private static async Task<JObject> FetchPriceDataFromApiAsync()
         {
             try
             {
                 using (var httpClient = new HttpClient())
                 {
                     httpClient.Timeout = TimeSpan.FromSeconds(30);
-                    var response = await httpClient.GetAsync("https://sahkotin.fi/prices");
+                    var response = await httpClient.GetAsync(API_URL);
                     response.EnsureSuccessStatusCode();
 
                     var json = await response.Content.ReadAsStringAsync();
@@ -244,9 +143,9 @@ namespace Sahkonhinta_App.Services
 
                     var jsonObject = JObject.Parse(json);
 
-                    if (jsonObject?["prices"] == null)
+                    if (jsonObject?["today"] == null)
                     {
-                        Console.WriteLine("Invalid API response: missing prices");
+                        Console.WriteLine("Invalid API response: missing 'today' array");
                         return null;
                     }
 
@@ -258,23 +157,6 @@ namespace Sahkonhinta_App.Services
             {
                 Console.WriteLine($"Error fetching price data from API: {ex.Message}");
                 return null;
-            }
-        }
-
-        public static void ClearCache()
-        {
-            try
-            {
-                Preferences.Remove(CACHE_KEY_TODAY_DATA);
-                Preferences.Remove(CACHE_KEY_TODAY_DATE);
-                Preferences.Remove(CACHE_KEY_TOMORROW_DATA);
-                Preferences.Remove(CACHE_KEY_TOMORROW_DATE);
-                Preferences.Remove(CACHE_KEY_LAST_FETCH);
-                Console.WriteLine("Price cache cleared");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error clearing cache: {ex.Message}");
             }
         }
 

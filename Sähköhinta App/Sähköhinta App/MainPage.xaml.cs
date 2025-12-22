@@ -104,19 +104,15 @@ namespace Sahkonhinta_App
 
             // Always display full 24-hour period (00:00-23:00) for today
             var todayPrices = todayData.Prices;
-            bool isTodayComplete = todayData.IsComplete;
 
             // Calculate statistics
             var dailyMax = todayPrices.Max(x => x.value);
             var dailyMin = todayPrices.Min(x => x.value);
             var dailyAvg = todayPrices.Average(x => x.value);
 
-            // Add asterisk if data is incomplete
-            string asterisk = isTodayComplete ? "" : "*";
-
-            highPrice.Text = $"{(dailyMax / 10 * taxPercentage + spotProvision):F} c/kWh{asterisk}";
-            lowPrice.Text = $"{(dailyMin / 10 * taxPercentage + spotProvision):F} c/kWh{asterisk}";
-            avgPrice.Text = $"{(dailyAvg / 10 * taxPercentage + spotProvision):F} c/kWh{asterisk}";
+            highPrice.Text = $"{(dailyMax / 10 * taxPercentage + spotProvision):F} c/kWh";
+            lowPrice.Text = $"{(dailyMin / 10 * taxPercentage + spotProvision):F} c/kWh";
+            avgPrice.Text = $"{(dailyAvg / 10 * taxPercentage + spotProvision):F} c/kWh";
 
             // Find current hour price
             var currentPrice = todayPrices.FirstOrDefault(x =>
@@ -150,19 +146,15 @@ namespace Sahkonhinta_App
                 pricesTomorrowButton.IsEnabled = true;
 
                 var tomorrowPrices = tomorrowData.Prices;
-                bool isTomorrowComplete = tomorrowData.IsComplete;
 
                 // Calculate tomorrow's statistics
                 var dailyMaxTomorrow = tomorrowPrices.Max(x => x.value);
                 var dailyMinTomorrow = tomorrowPrices.Min(x => x.value);
                 var dailyAvgTomorrow = tomorrowPrices.Average(x => x.value);
 
-                // Add asterisk if data is incomplete
-                string asteriskTomorrow = isTomorrowComplete ? "" : "*";
-
-                highPriceTomorrow.Text = $"{(dailyMaxTomorrow / 10 * taxPercentage + spotProvision):F} c/kWh{asteriskTomorrow}";
-                lowPriceTomorrow.Text = $"{(dailyMinTomorrow / 10 * taxPercentage + spotProvision):F} c/kWh{asteriskTomorrow}";
-                avgPriceTomorrow.Text = $"{(dailyAvgTomorrow / 10 * taxPercentage + spotProvision):F} c/kWh{asteriskTomorrow}";
+                highPriceTomorrow.Text = $"{(dailyMaxTomorrow / 10 * taxPercentage + spotProvision):F} c/kWh";
+                lowPriceTomorrow.Text = $"{(dailyMinTomorrow / 10 * taxPercentage + spotProvision):F} c/kWh";
+                avgPriceTomorrow.Text = $"{(dailyAvgTomorrow / 10 * taxPercentage + spotProvision):F} c/kWh";
 
                 // Prepare display data
                 var rowsTomorrow = tomorrowPrices.Select(x => new
@@ -248,17 +240,14 @@ namespace Sahkonhinta_App
 
         private void UpdateTaxLabel()
         {
-            string baseText;
             if (spotProvision != 0)
             {
-                baseText = "Kaikki hinnat alv " + (taxPercentage - 1) * 100 + "%, sis. spot-provision " + spotProvision + " c/kWh";
+                taxLabel.Text = "Kaikki hinnat alv " + (taxPercentage - 1) * 100 + "%, sis. spot-provision " + spotProvision + " c/kWh";
             }
             else
             {
-                baseText = "Kaikki hinnat alv " + (taxPercentage - 1) * 100 + "%";
+                taxLabel.Text = "Kaikki hinnat alv " + (taxPercentage - 1) * 100 + "%";
             }
-
-            taxLabel.Text = baseText + "\n* = Laskettu alle 24 tunnin datasta";
         }
 
         private async void tax_Clicked(object sender, EventArgs e)
