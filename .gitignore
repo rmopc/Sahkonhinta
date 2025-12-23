@@ -362,3 +362,5 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 /Sähköhinta App/CLAUDE.md
+/Sähköhinta App/electricity_prices (2).json
+/Sähköhinta App/electricity_prices.json

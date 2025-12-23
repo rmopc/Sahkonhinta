@@ -172,12 +172,14 @@
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
                         </Grid.RowDefinitions>
-                        
+
                         <Button Grid.Column="0" Grid.Row="0" x:Name="pricesTodayButton" Text="Tänään" Style="{StaticResource ModernButtonStyle}" Clicked="pricesTodayButton_Clicked"/>
                         <Button Grid.Column="1" Grid.Row="0" x:Name="pricesTomorrowButton" Text="Huomenna" Style="{StaticResource SecondaryButtonStyle}" IsEnabled="False" Clicked="pricesTomorrowButton_Clicked"/>
                         <Button Grid.Column="0" Grid.Row="1" x:Name="toggleChartButton" Text="Näytä kaavio" Style="{StaticResource SecondaryButtonStyle}" Clicked="toggleChartButton_Clicked"/>
                         <Button Grid.Column="1" Grid.Row="1" x:Name="reloadButton" Text="Päivitä" Style="{StaticResource SecondaryButtonStyle}" Clicked="reloadButton_Clicked"/>
+                        <Button Grid.Column="0" Grid.ColumnSpan="2" Grid.Row="2" x:Name="toggleIntervalButton" Text="Näytä 15 min hinnat" Style="{StaticResource SecondaryButtonStyle}" Clicked="toggleIntervalButton_Clicked"/>
                     </Grid>
                 </StackLayout>
 

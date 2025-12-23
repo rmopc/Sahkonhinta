@@ -11,7 +11,15 @@ namespace Sahkonhinta_App.Services
     public class DayPriceData
     {
         public DateTime Date { get; set; }
-        public List<Price> Prices { get; set; }
+
+        // Hourly average prices (default view)
+        public List<Price> HourlyPrices { get; set; }
+
+        // 15-minute interval prices (detailed view)
+        public List<Price> FifteenMinutePrices { get; set; }
+
+        // Backward compatibility: Prices returns hourly averages by default
+        public List<Price> Prices => HourlyPrices;
     }
 
     public class PriceDataService
@@ -34,34 +42,44 @@ namespace Sahkonhinta_App.Services
                     return (null, null);
                 }
 
-                // Parse today's prices from the "today" array
+                // Parse today's 15-minute prices from the "today" array
                 var todayArray = jsonObject["today"] as JArray;
-                var todayPrices = ParsePricesFromArray(todayArray, todayLocal);
+                var todayFifteenMinPrices = ParsePricesFromArray(todayArray, todayLocal);
+
+                // Parse today's hourly averages from the "today_hourly_averages" array
+                var todayHourlyArray = jsonObject["today_hourly_averages"] as JArray;
+                var todayHourlyPrices = ParsePricesFromArray(todayHourlyArray, todayLocal);
 
                 DayPriceData todayData = null;
-                if (todayPrices.Any())
+                if (todayHourlyPrices.Any() || todayFifteenMinPrices.Any())
                 {
                     todayData = new DayPriceData
                     {
                         Date = todayLocal,
-                        Prices = todayPrices
+                        HourlyPrices = todayHourlyPrices,
+                        FifteenMinutePrices = todayFifteenMinPrices
                     };
-                    Console.WriteLine($"Loaded today's data: {todayLocal:yyyy-MM-dd} ({todayPrices.Count} hours)");
+                    Console.WriteLine($"Loaded today's data: {todayLocal:yyyy-MM-dd} ({todayHourlyPrices.Count} hourly, {todayFifteenMinPrices.Count} 15-min)");
                 }
 
-                // Parse tomorrow's prices from the "tomorrow" array
+                // Parse tomorrow's 15-minute prices from the "tomorrow" array
                 var tomorrowArray = jsonObject["tomorrow"] as JArray;
-                var tomorrowPrices = ParsePricesFromArray(tomorrowArray, tomorrowLocal);
+                var tomorrowFifteenMinPrices = ParsePricesFromArray(tomorrowArray, tomorrowLocal);
+
+                // Parse tomorrow's hourly averages from the "tomorrow_hourly_averages" array
+                var tomorrowHourlyArray = jsonObject["tomorrow_hourly_averages"] as JArray;
+                var tomorrowHourlyPrices = ParsePricesFromArray(tomorrowHourlyArray, tomorrowLocal);
 
                 DayPriceData tomorrowData = null;
-                if (tomorrowPrices.Any())
+                if (tomorrowHourlyPrices.Any() || tomorrowFifteenMinPrices.Any())
                 {
                     tomorrowData = new DayPriceData
                     {
                         Date = tomorrowLocal,
-                        Prices = tomorrowPrices
+                        HourlyPrices = tomorrowHourlyPrices,
+                        FifteenMinutePrices = tomorrowFifteenMinPrices
                     };
-                    Console.WriteLine($"Loaded tomorrow's data: {tomorrowLocal:yyyy-MM-dd} ({tomorrowPrices.Count} hours)");
+                    Console.WriteLine($"Loaded tomorrow's data: {tomorrowLocal:yyyy-MM-dd} ({tomorrowHourlyPrices.Count} hourly, {tomorrowFifteenMinPrices.Count} 15-min)");
                 }
 
                 return (todayData, tomorrowData);
@@ -161,20 +179,21 @@ namespace Sahkonhinta_App.Services
         }
 
         // Compatibility method for widgets - returns raw JSON with both days combined
+        // Uses hourly averages for cleaner widget display
         public static async Task<JObject> GetRawPriceDataAsync(bool forceRefresh = false)
         {
             try
             {
                 var (today, tomorrow) = await GetPriceDataAsync(forceRefresh);
 
-                // Combine today and tomorrow prices into a single list
+                // Combine today and tomorrow hourly prices into a single list
                 var allPrices = new List<Price>();
 
-                if (today?.Prices != null)
-                    allPrices.AddRange(today.Prices);
+                if (today?.HourlyPrices != null)
+                    allPrices.AddRange(today.HourlyPrices);
 
-                if (tomorrow?.Prices != null)
-                    allPrices.AddRange(tomorrow.Prices);
+                if (tomorrow?.HourlyPrices != null)
+                    allPrices.AddRange(tomorrow.HourlyPrices);
 
                 // Create JSON object in the expected format
                 var result = new JObject();

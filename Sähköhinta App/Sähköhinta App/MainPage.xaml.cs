@@ -26,6 +26,7 @@ namespace Sahkonhinta_App
         DayPriceData tomorrowData = null;
         bool isChartVisible = false;
         bool isShowingTomorrow = false;
+        bool isShowingFifteenMinutes = false; // Toggle for 15-minute vs hourly view
         dynamic currentPriceDataToday = null;
         dynamic currentPriceDataTomorrow = null;
 
@@ -96,14 +97,15 @@ namespace Sahkonhinta_App
                 return;
 
             var nowLocal = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, localTimeZone);
-            var currentHour = nowLocal.Hour;
 
             ///////////////////////////////////////////////////
             /////           TODAY'S PRICES (FULL 24H)       /////
             //////////////////////////////////////////////////
 
-            // Always display full 24-hour period (00:00-23:00) for today
-            var todayPrices = todayData.Prices;
+            // Select price list based on interval toggle (hourly average or 15-minute)
+            var todayPrices = isShowingFifteenMinutes
+                ? todayData.FifteenMinutePrices ?? todayData.HourlyPrices
+                : todayData.HourlyPrices ?? todayData.FifteenMinutePrices;
 
             // Calculate statistics
             var dailyMax = todayPrices.Max(x => x.value);
@@ -114,9 +116,22 @@ namespace Sahkonhinta_App
             lowPrice.Text = $"{(dailyMin / 10 * taxPercentage + spotProvision):F} c/kWh";
             avgPrice.Text = $"{(dailyAvg / 10 * taxPercentage + spotProvision):F} c/kWh";
 
-            // Find current hour price
-            var currentPrice = todayPrices.FirstOrDefault(x =>
-                TimeZoneInfo.ConvertTimeFromUtc(x.date, localTimeZone).Hour == currentHour);
+            // Find current price
+            Services.Price currentPrice = null;
+            if (isShowingFifteenMinutes)
+            {
+                // For 15-minute intervals, find the closest time slot
+                currentPrice = todayPrices
+                    .OrderBy(x => Math.Abs((TimeZoneInfo.ConvertTimeFromUtc(x.date, localTimeZone) - nowLocal).TotalMinutes))
+                    .FirstOrDefault();
+            }
+            else
+            {
+                // For hourly averages, find the current hour
+                var currentHour = nowLocal.Hour;
+                currentPrice = todayPrices.FirstOrDefault(x =>
+                    TimeZoneInfo.ConvertTimeFromUtc(x.date, localTimeZone).Hour == currentHour);
+            }
 
             if (currentPrice != null)
             {
@@ -141,11 +156,14 @@ namespace Sahkonhinta_App
             /////           TOMORROW'S PRICES (FULL 24H)    /////
             //////////////////////////////////////////////////
 
-            if (tomorrowData != null && tomorrowData.Prices != null && tomorrowData.Prices.Any())
+            if (tomorrowData != null && (tomorrowData.HourlyPrices?.Any() == true || tomorrowData.FifteenMinutePrices?.Any() == true))
             {
                 pricesTomorrowButton.IsEnabled = true;
 
-                var tomorrowPrices = tomorrowData.Prices;
+                // Select price list based on interval toggle (hourly average or 15-minute)
+                var tomorrowPrices = isShowingFifteenMinutes
+                    ? tomorrowData.FifteenMinutePrices ?? tomorrowData.HourlyPrices
+                    : tomorrowData.HourlyPrices ?? tomorrowData.FifteenMinutePrices;
 
                 // Calculate tomorrow's statistics
                 var dailyMaxTomorrow = tomorrowPrices.Max(x => x.value);
@@ -321,11 +339,20 @@ namespace Sahkonhinta_App
             isChartVisible = !isChartVisible;
             chartFrame.IsVisible = isChartVisible;
             toggleChartButton.Text = isChartVisible ? "Piilota kaavio" : "Näytä kaavio";
-            
+
             if (isChartVisible)
             {
                 UpdateUIWithData();
             }
+        }
+
+        private void toggleIntervalButton_Clicked(object sender, EventArgs e)
+        {
+            isShowingFifteenMinutes = !isShowingFifteenMinutes;
+            toggleIntervalButton.Text = isShowingFifteenMinutes ? "Näytä tuntihinnat" : "Näytä 15 min hinnat";
+
+            // Refresh the UI with the new interval selection
+            UpdateUIWithData();
         }
 
         private void DrawChart(dynamic priceData)
@@ -440,41 +467,59 @@ namespace Sahkonhinta_App
                     chartContainer.Children.Add(priceLabel);
                 }
 
-                // Hour labels at bottom
-                int hour = ((DateTime)priceList[i].date).Hour;
-                string hourText = string.Empty;
+                // Time labels at bottom
+                DateTime itemTime = (DateTime)priceList[i].date;
+                string timeText = string.Empty;
 
-                // Show all hours if space allows, otherwise show every 2nd or 3rd
-                if (slotWidth >= 14)
+                // For 15-minute intervals, show time in HH:mm format for selected entries
+                // For hourly intervals, show hour only
+                if (priceList.Count > 50) // 15-minute intervals (96 entries)
                 {
-                    hourText = hour.ToString();
-                }
-                else if (slotWidth >= 10 && i % 2 == 0)
-                {
-                    hourText = hour.ToString();
-                }
-                else if (slotWidth >= 6 && i % 3 == 0)
-                {
-                    hourText = hour.ToString();
-                }
-
-                if (!string.IsNullOrEmpty(hourText))
-                {
-                    var hourLabel = new Label
+                    // Show labels every 2 or 4 hours depending on space
+                    if (slotWidth >= 14 && itemTime.Minute == 0 && itemTime.Hour % 2 == 0)
                     {
-                        Text = hourText,
+                        timeText = itemTime.ToString("HH:mm");
+                    }
+                    else if (slotWidth >= 8 && itemTime.Minute == 0 && itemTime.Hour % 4 == 0)
+                    {
+                        timeText = itemTime.ToString("HH:mm");
+                    }
+                }
+                else // Hourly intervals (24 entries)
+                {
+                    int hour = itemTime.Hour;
+                    // Show all hours if space allows, otherwise show every 2nd or 3rd
+                    if (slotWidth >= 14)
+                    {
+                        timeText = hour.ToString();
+                    }
+                    else if (slotWidth >= 10 && i % 2 == 0)
+                    {
+                        timeText = hour.ToString();
+                    }
+                    else if (slotWidth >= 6 && i % 3 == 0)
+                    {
+                        timeText = hour.ToString();
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(timeText))
+                {
+                    var timeLabel = new Label
+                    {
+                        Text = timeText,
                         FontSize = slotWidth >= 14 ? 10 : 9,
                         HorizontalTextAlignment = TextAlignment.Center,
                         TextColor = secondaryTextColor
                     };
 
-                    AbsoluteLayout.SetLayoutBounds(hourLabel, new Rectangle(
+                    AbsoluteLayout.SetLayoutBounds(timeLabel, new Rectangle(
                         slotOffset - slotPadding / 2,
                         topPadding + drawableHeight + 4,
                         slotWidth,
                         14));
-                    AbsoluteLayout.SetLayoutFlags(hourLabel, AbsoluteLayoutFlags.None);
-                    chartContainer.Children.Add(hourLabel);
+                    AbsoluteLayout.SetLayoutFlags(timeLabel, AbsoluteLayoutFlags.None);
+                    chartContainer.Children.Add(timeLabel);
                 }
             }
 
