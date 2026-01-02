@@ -274,7 +274,7 @@
                             </Grid.ColumnDefinitions>
                             <Button Grid.Column="0" x:Name="tax00" Text="0%" Style="{StaticResource TaxButtonStyle}" Clicked="tax_Clicked"/>
                             <Button Grid.Column="1" x:Name="tax10" Text="10%" Style="{StaticResource TaxButtonStyle}" Clicked="tax_Clicked"/>
-                            <Button Grid.Column="2" x:Name="tax24" Text="24%" Style="{StaticResource TaxButtonStyle}" Clicked="tax_Clicked"/>
+                            <Button Grid.Column="2" x:Name="tax24" Text="25,5%" Style="{StaticResource TaxButtonStyle}" Clicked="tax_Clicked"/>
                         </Grid>
                         
                         <Label x:Name="settingsStatus" HorizontalOptions="Center" TextColor="{AppThemeBinding Light={StaticResource LightAccentColor}, Dark={StaticResource DarkAccentColor}}" FontSize="14" Text="Päivitetään..." IsVisible="false" FontAttributes="Bold"/>
@@ -303,7 +303,7 @@
                     </StackLayout>
                 </Frame>
                 <StackLayout VerticalOptions="EndAndExpand" Margin="0,50,0,20">
-                    <Label Text="© Ronie Oljemark 2022-2024" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Light=#7F8C8D, Dark=#BDC3C7}" FontSize="12"/>
+                    <Label Text="© Ronie Oljemark 2022-2026" HorizontalTextAlignment="Center" TextColor="{AppThemeBinding Light=#7F8C8D, Dark=#BDC3C7}" FontSize="12"/>
                 </StackLayout>
             </StackLayout>
         </ScrollView>

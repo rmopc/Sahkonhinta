@@ -183,10 +183,16 @@ namespace Sahkonhinta_App
 
                 priceListViewTomorrow.ItemsSource = rowsTomorrow;
                 currentPriceDataTomorrow = rowsTomorrow;
+
+                // Always show tomorrow's stats container when data is available
+                tomorrowAvgStack.IsVisible = true;
+                countedPricesTomorrow.IsVisible = true;
             }
             else
             {
                 pricesTomorrowButton.IsEnabled = false;
+                tomorrowAvgStack.IsVisible = false;
+                countedPricesTomorrow.IsVisible = false;
             }
 
             // Draw chart if visible
@@ -227,11 +233,9 @@ namespace Sahkonhinta_App
 
             // Show today's data
             priceListView.IsVisible = true;
-            
-            // Hide tomorrow's data
+
+            // Hide tomorrow's price list (but keep stats container visible if data exists)
             priceListViewTomorrow.IsVisible = false;
-            tomorrowAvgStack.IsVisible = false;
-            countedPricesTomorrow.IsVisible = false;
 
             // Update button styles
             pricesTodayButton.Style = (Style)Resources["ModernButtonStyle"];
@@ -287,9 +291,9 @@ namespace Sahkonhinta_App
             {
                 taxPercentage = 1.10;
             }
-            else if (buttonText == "24%")
+            else if (buttonText == "25,5%")
             {
-                taxPercentage = 1.24;
+                taxPercentage = 1.255;
             }
 
             // Tallennetaan asetettu veroprosentti, jotta se säilyy vaikka sovellus suljetaan 

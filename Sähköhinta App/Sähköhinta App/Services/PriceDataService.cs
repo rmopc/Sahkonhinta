@@ -42,13 +42,29 @@ namespace Sahkonhinta_App.Services
                     return (null, null);
                 }
 
-                // Parse today's 15-minute prices from the "today" array
-                var todayArray = jsonObject["today"] as JArray;
-                var todayFifteenMinPrices = ParsePricesFromArray(todayArray, todayLocal);
+                // Parse the single "prices" array from the new API format
+                var pricesArray = jsonObject["prices"] as JArray;
+                if (pricesArray == null)
+                {
+                    Console.WriteLine("API response missing 'prices' array");
+                    return (null, null);
+                }
 
-                // Parse today's hourly averages from the "today_hourly_averages" array
-                var todayHourlyArray = jsonObject["today_hourly_averages"] as JArray;
-                var todayHourlyPrices = ParsePricesFromArray(todayHourlyArray, todayLocal);
+                // Parse all prices and group by date
+                var allPrices = ParseAllPricesFromArray(pricesArray);
+
+                // Separate today's and tomorrow's 15-minute prices
+                var todayFifteenMinPrices = allPrices.Where(p =>
+                    TimeZoneInfo.ConvertTimeFromUtc(p.date, localTimeZone).Date == todayLocal
+                ).ToList();
+
+                var tomorrowFifteenMinPrices = allPrices.Where(p =>
+                    TimeZoneInfo.ConvertTimeFromUtc(p.date, localTimeZone).Date == tomorrowLocal
+                ).ToList();
+
+                // Generate hourly averages from 15-minute data
+                var todayHourlyPrices = GenerateHourlyAverages(todayFifteenMinPrices, localTimeZone);
+                var tomorrowHourlyPrices = GenerateHourlyAverages(tomorrowFifteenMinPrices, localTimeZone);
 
                 DayPriceData todayData = null;
                 if (todayHourlyPrices.Any() || todayFifteenMinPrices.Any())
@@ -61,14 +77,6 @@ namespace Sahkonhinta_App.Services
                     };
                     Console.WriteLine($"Loaded today's data: {todayLocal:yyyy-MM-dd} ({todayHourlyPrices.Count} hourly, {todayFifteenMinPrices.Count} 15-min)");
                 }
-
-                // Parse tomorrow's 15-minute prices from the "tomorrow" array
-                var tomorrowArray = jsonObject["tomorrow"] as JArray;
-                var tomorrowFifteenMinPrices = ParsePricesFromArray(tomorrowArray, tomorrowLocal);
-
-                // Parse tomorrow's hourly averages from the "tomorrow_hourly_averages" array
-                var tomorrowHourlyArray = jsonObject["tomorrow_hourly_averages"] as JArray;
-                var tomorrowHourlyPrices = ParsePricesFromArray(tomorrowHourlyArray, tomorrowLocal);
 
                 DayPriceData tomorrowData = null;
                 if (tomorrowHourlyPrices.Any() || tomorrowFifteenMinPrices.Any())
@@ -91,13 +99,11 @@ namespace Sahkonhinta_App.Services
             }
         }
 
-        private static List<Price> ParsePricesFromArray(JArray priceArray, DateTime expectedDate)
+        private static List<Price> ParseAllPricesFromArray(JArray priceArray)
         {
             var prices = new List<Price>();
             if (priceArray == null)
                 return prices;
-
-            var localTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Europe/Helsinki");
 
             foreach (var item in priceArray)
             {
@@ -110,11 +116,6 @@ namespace Sahkonhinta_App.Services
 
                     var datetime = DateTimeOffset.Parse(datetimeStr);
                     var datetimeUtc = datetime.UtcDateTime;
-                    var datetimeLocal = TimeZoneInfo.ConvertTimeFromUtc(datetimeUtc, localTimeZone);
-
-                    // Only include prices that match the expected date
-                    if (datetimeLocal.Date != expectedDate)
-                        continue;
 
                     // Use price_cents_kwh which is already converted to c/kWh
                     var priceCentsKwh = (double?)item["price_cents_kwh"];
@@ -141,6 +142,40 @@ namespace Sahkonhinta_App.Services
             return prices.OrderBy(p => p.date).ToList();
         }
 
+        private static List<Price> GenerateHourlyAverages(List<Price> fifteenMinutePrices, TimeZoneInfo localTimeZone)
+        {
+            var hourlyPrices = new List<Price>();
+
+            if (!fifteenMinutePrices.Any())
+                return hourlyPrices;
+
+            // Group 15-minute prices by hour and calculate average
+            var groupedByHour = fifteenMinutePrices
+                .GroupBy(p =>
+                {
+                    var localTime = TimeZoneInfo.ConvertTimeFromUtc(p.date, localTimeZone);
+                    return new DateTime(localTime.Year, localTime.Month, localTime.Day, localTime.Hour, 0, 0);
+                })
+                .OrderBy(g => g.Key);
+
+            foreach (var hourGroup in groupedByHour)
+            {
+                var averagePrice = hourGroup.Average(p => p.value);
+
+                // Convert the local hour back to UTC for storage
+                var localHourStart = hourGroup.Key;
+                var utcHourStart = TimeZoneInfo.ConvertTimeToUtc(localHourStart, localTimeZone);
+
+                hourlyPrices.Add(new Price
+                {
+                    date = utcHourStart,
+                    value = averagePrice
+                });
+            }
+
+            return hourlyPrices;
+        }
+
         private static async Task<JObject> FetchPriceDataFromApiAsync()
         {
             try
@@ -161,9 +196,9 @@ namespace Sahkonhinta_App.Services
 
                     var jsonObject = JObject.Parse(json);
 
-                    if (jsonObject?["today"] == null)
+                    if (jsonObject?["prices"] == null)
                     {
-                        Console.WriteLine("Invalid API response: missing 'today' array");
+                        Console.WriteLine("Invalid API response: missing 'prices' array");
                         return null;
                     }
 
