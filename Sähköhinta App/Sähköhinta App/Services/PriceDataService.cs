@@ -79,7 +79,9 @@ namespace Sahkonhinta_App.Services
                 }
 
                 DayPriceData tomorrowData = null;
-                if (tomorrowHourlyPrices.Any() || tomorrowFifteenMinPrices.Any())
+                // Only consider tomorrow's prices available if we have more than 4 full hours
+                // (not just the midnight hour 00:00-00:45, but actual data like 01:00, 02:00, etc.)
+                if (tomorrowHourlyPrices.Count > 4)
                 {
                     tomorrowData = new DayPriceData
                     {
@@ -88,6 +90,10 @@ namespace Sahkonhinta_App.Services
                         FifteenMinutePrices = tomorrowFifteenMinPrices
                     };
                     Console.WriteLine($"Loaded tomorrow's data: {tomorrowLocal:yyyy-MM-dd} ({tomorrowHourlyPrices.Count} hourly, {tomorrowFifteenMinPrices.Count} 15-min)");
+                }
+                else if (tomorrowHourlyPrices.Any())
+                {
+                    Console.WriteLine($"Tomorrow's data incomplete: only {tomorrowHourlyPrices.Count} hours available (need more than 4)");
                 }
 
                 return (todayData, tomorrowData);

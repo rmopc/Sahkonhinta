@@ -156,7 +156,8 @@ namespace Sahkonhinta_App
             /////           TOMORROW'S PRICES (FULL 24H)    /////
             //////////////////////////////////////////////////
 
-            if (tomorrowData != null && (tomorrowData.HourlyPrices?.Any() == true || tomorrowData.FifteenMinutePrices?.Any() == true))
+            // Only show tomorrow's data if we have more than 4 full hours (not just midnight hour)
+            if (tomorrowData != null && tomorrowData.HourlyPrices?.Count > 4)
             {
                 pricesTomorrowButton.IsEnabled = true;
 
