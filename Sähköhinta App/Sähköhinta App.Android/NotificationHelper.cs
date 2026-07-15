@@ -1,8 +1,9 @@
 using Android.App;
 using Android.Content;
 using Android.Graphics;
+using Android.Graphics.Drawables;
 using Android.OS;
-using AndroidX.Core.App;
+using Android.Util;
 using System;
 using System.Linq;
 using Resource = global::Sähköhinta_App.Droid.Resource;
@@ -11,6 +12,7 @@ namespace Sahkonhinta_App.Droid
 {
     public static class NotificationHelper
     {
+        private const string Tag = "SahkoWidget";
         private const string ChannelId = "sahko_price_channel";
         private const int NotificationId = 0xA11CE; // Arbitrary, consistent value
 
@@ -58,25 +60,20 @@ namespace Sahkonhinta_App.Droid
                     context,
                     0,
                     launchIntent,
-                    GetPendingIntentFlags());
+                    PendingIntentFlags.UpdateCurrent | PendingIntentFlags.Immutable);
             }
 
-            var builder = new NotificationCompat.Builder(context, ChannelId)
-                .SetSmallIcon(Resource.Drawable.ic_stat_electric)
+            var builder = new Notification.Builder(context, ChannelId)
+                .SetSmallIcon(CreateStatusBarIcon(context, data))
                 .SetContentTitle("SähköSpot")
                 .SetContentText(contentText)
-                .SetStyle(new NotificationCompat.BigTextStyle().BigText(bigText))
+                .SetStyle(new Notification.BigTextStyle().BigText(bigText))
                 .SetOngoing(true)
                 .SetOnlyAlertOnce(true)
                 .SetAutoCancel(false)
-                .SetCategory(NotificationCompat.CategoryStatus)
-                .SetPriority(NotificationCompat.PriorityLow)
-                .SetVisibility((int)NotificationVisibility.Public);
-
-            if (Build.VERSION.SdkInt >= BuildVersionCodes.Lollipop)
-            {
-                builder.SetColor(Color.ParseColor("#3498DB"));
-            }
+                .SetCategory(Notification.CategoryStatus)
+                .SetVisibility(NotificationVisibility.Public)
+                .SetColor(Color.ParseColor("#3498DB").ToArgb());
 
             if (pendingIntent != null)
             {
@@ -84,6 +81,58 @@ namespace Sahkonhinta_App.Droid
             }
 
             notificationManager.Notify(NotificationId, builder.Build());
+        }
+
+        /// <summary>
+        /// Renders the current price as text into the notification's small icon so
+        /// the number itself shows in the status bar (next to clock/battery/wifi).
+        /// Status bar icons are alpha-masked and tinted by the system, so the text
+        /// is drawn in plain white and ends up white/grey like the system icons.
+        /// Falls back to the static lightning bolt icon when there is no data.
+        /// </summary>
+        private static Icon CreateStatusBarIcon(Context context, WidgetData data)
+        {
+            if (data == null)
+                return Icon.CreateWithResource(context, Resource.Drawable.ic_stat_electric);
+
+            try
+            {
+                var text = data.CurrentPrice.ToString("F2");
+
+                // The status bar scales the whole bitmap into a square icon slot,
+                // so the string's width is what limits digit size. Everything here
+                // fights for width: tight crop (no padding), condensed bold face
+                // and negative letter spacing.
+                var pricePaint = new Paint
+                {
+                    AntiAlias = true,
+                    Color = Color.White,
+                    TextAlign = Paint.Align.Left,
+                    LetterSpacing = -0.06f
+                };
+                pricePaint.SetTypeface(Typeface.Create("sans-serif-condensed", TypefaceStyle.Bold));
+                pricePaint.TextSize = 128f;
+
+                var priceBounds = new Rect();
+                pricePaint.GetTextBounds(text, 0, text.Length, priceBounds);
+
+                const int margin = 2;
+                var width = Math.Max(1, priceBounds.Width() + 2 * margin);
+                var height = Math.Max(1, priceBounds.Height() + 2 * margin);
+
+                var bitmap = Bitmap.CreateBitmap(width, height, Bitmap.Config.Argb8888);
+                var canvas = new Canvas(bitmap);
+
+                // Offset so the measured glyph box starts at the margin.
+                canvas.DrawText(text, margin - priceBounds.Left, margin - priceBounds.Top, pricePaint);
+
+                return Icon.CreateWithBitmap(bitmap);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(Tag, $"Status bar icon error: {ex.Message}");
+                return Icon.CreateWithResource(context, Resource.Drawable.ic_stat_electric);
+            }
         }
 
         public static void CancelPriceNotification(Context context)
@@ -109,13 +158,6 @@ namespace Sahkonhinta_App.Droid
             channel.EnableVibration(false);
             channel.EnableLights(false);
             manager.CreateNotificationChannel(channel);
-        }
-
-        private static PendingIntentFlags GetPendingIntentFlags()
-        {
-            return Build.VERSION.SdkInt >= BuildVersionCodes.M
-                ? PendingIntentFlags.UpdateCurrent | PendingIntentFlags.Immutable
-                : PendingIntentFlags.UpdateCurrent;
         }
     }
 }

@@ -16598,124 +16598,127 @@ namespace Sähköhinta_App.Droid
 			public const int ic_stat_electric = 2131165298;
 			
 			// aapt resource value: 0x7F070073
-			public const int material_cursor_drawable = 2131165299;
+			public const int ic_widget_refresh = 2131165299;
 			
 			// aapt resource value: 0x7F070074
-			public const int material_ic_calendar_black_24dp = 2131165300;
+			public const int material_cursor_drawable = 2131165300;
 			
 			// aapt resource value: 0x7F070075
-			public const int material_ic_clear_black_24dp = 2131165301;
+			public const int material_ic_calendar_black_24dp = 2131165301;
 			
 			// aapt resource value: 0x7F070076
-			public const int material_ic_edit_black_24dp = 2131165302;
+			public const int material_ic_clear_black_24dp = 2131165302;
 			
 			// aapt resource value: 0x7F070077
-			public const int material_ic_keyboard_arrow_left_black_24dp = 2131165303;
+			public const int material_ic_edit_black_24dp = 2131165303;
 			
 			// aapt resource value: 0x7F070078
-			public const int material_ic_keyboard_arrow_next_black_24dp = 2131165304;
+			public const int material_ic_keyboard_arrow_left_black_24dp = 2131165304;
 			
 			// aapt resource value: 0x7F070079
-			public const int material_ic_keyboard_arrow_previous_black_24dp = 2131165305;
+			public const int material_ic_keyboard_arrow_next_black_24dp = 2131165305;
 			
 			// aapt resource value: 0x7F07007A
-			public const int material_ic_keyboard_arrow_right_black_24dp = 2131165306;
+			public const int material_ic_keyboard_arrow_previous_black_24dp = 2131165306;
 			
 			// aapt resource value: 0x7F07007B
-			public const int material_ic_menu_arrow_down_black_24dp = 2131165307;
+			public const int material_ic_keyboard_arrow_right_black_24dp = 2131165307;
 			
 			// aapt resource value: 0x7F07007C
-			public const int material_ic_menu_arrow_up_black_24dp = 2131165308;
+			public const int material_ic_menu_arrow_down_black_24dp = 2131165308;
 			
 			// aapt resource value: 0x7F07007D
-			public const int mtrl_dialog_background = 2131165309;
+			public const int material_ic_menu_arrow_up_black_24dp = 2131165309;
 			
 			// aapt resource value: 0x7F07007E
-			public const int mtrl_dropdown_arrow = 2131165310;
+			public const int mtrl_dialog_background = 2131165310;
 			
 			// aapt resource value: 0x7F07007F
-			public const int mtrl_ic_arrow_drop_down = 2131165311;
+			public const int mtrl_dropdown_arrow = 2131165311;
 			
 			// aapt resource value: 0x7F070080
-			public const int mtrl_ic_arrow_drop_up = 2131165312;
+			public const int mtrl_ic_arrow_drop_down = 2131165312;
 			
 			// aapt resource value: 0x7F070081
-			public const int mtrl_ic_cancel = 2131165313;
+			public const int mtrl_ic_arrow_drop_up = 2131165313;
 			
 			// aapt resource value: 0x7F070082
-			public const int mtrl_ic_error = 2131165314;
+			public const int mtrl_ic_cancel = 2131165314;
 			
 			// aapt resource value: 0x7F070083
-			public const int mtrl_navigation_bar_item_background = 2131165315;
+			public const int mtrl_ic_error = 2131165315;
 			
 			// aapt resource value: 0x7F070084
-			public const int mtrl_popupmenu_background = 2131165316;
+			public const int mtrl_navigation_bar_item_background = 2131165316;
 			
 			// aapt resource value: 0x7F070085
-			public const int mtrl_popupmenu_background_dark = 2131165317;
+			public const int mtrl_popupmenu_background = 2131165317;
 			
 			// aapt resource value: 0x7F070086
-			public const int mtrl_tabs_default_indicator = 2131165318;
+			public const int mtrl_popupmenu_background_dark = 2131165318;
 			
 			// aapt resource value: 0x7F070087
-			public const int navigation_empty_icon = 2131165319;
+			public const int mtrl_tabs_default_indicator = 2131165319;
 			
 			// aapt resource value: 0x7F070088
-			public const int notification_action_background = 2131165320;
+			public const int navigation_empty_icon = 2131165320;
 			
 			// aapt resource value: 0x7F070089
-			public const int notification_bg = 2131165321;
+			public const int notification_action_background = 2131165321;
 			
 			// aapt resource value: 0x7F07008A
-			public const int notification_bg_low = 2131165322;
+			public const int notification_bg = 2131165322;
 			
 			// aapt resource value: 0x7F07008B
-			public const int notification_bg_low_normal = 2131165323;
+			public const int notification_bg_low = 2131165323;
 			
 			// aapt resource value: 0x7F07008C
-			public const int notification_bg_low_pressed = 2131165324;
+			public const int notification_bg_low_normal = 2131165324;
 			
 			// aapt resource value: 0x7F07008D
-			public const int notification_bg_normal = 2131165325;
+			public const int notification_bg_low_pressed = 2131165325;
 			
 			// aapt resource value: 0x7F07008E
-			public const int notification_bg_normal_pressed = 2131165326;
+			public const int notification_bg_normal = 2131165326;
 			
 			// aapt resource value: 0x7F07008F
-			public const int notification_icon_background = 2131165327;
+			public const int notification_bg_normal_pressed = 2131165327;
 			
 			// aapt resource value: 0x7F070090
-			public const int notification_oversize_large_icon_bg = 2131165328;
+			public const int notification_icon_background = 2131165328;
 			
 			// aapt resource value: 0x7F070091
-			public const int notification_template_icon_bg = 2131165329;
+			public const int notification_oversize_large_icon_bg = 2131165329;
 			
 			// aapt resource value: 0x7F070092
-			public const int notification_template_icon_low_bg = 2131165330;
+			public const int notification_template_icon_bg = 2131165330;
 			
 			// aapt resource value: 0x7F070093
-			public const int notification_tile_bg = 2131165331;
+			public const int notification_template_icon_low_bg = 2131165331;
 			
 			// aapt resource value: 0x7F070094
-			public const int notify_panel_notification_icon_bg = 2131165332;
+			public const int notification_tile_bg = 2131165332;
 			
 			// aapt resource value: 0x7F070095
-			public const int preference_list_divider_material = 2131165333;
+			public const int notify_panel_notification_icon_bg = 2131165333;
 			
 			// aapt resource value: 0x7F070096
-			public const int price_card_background = 2131165334;
+			public const int preference_list_divider_material = 2131165334;
 			
 			// aapt resource value: 0x7F070097
-			public const int test_custom_background = 2131165335;
+			public const int price_card_background = 2131165335;
 			
 			// aapt resource value: 0x7F070098
-			public const int tooltip_frame_dark = 2131165336;
+			public const int test_custom_background = 2131165336;
 			
 			// aapt resource value: 0x7F070099
-			public const int tooltip_frame_light = 2131165337;
+			public const int tooltip_frame_dark = 2131165337;
 			
 			// aapt resource value: 0x7F07009A
-			public const int widget_background = 2131165338;
+			public const int tooltip_frame_light = 2131165338;
+			
+			// aapt resource value: 0x7F07009B
+			public const int widget_background = 2131165339;
 			
 			static Drawable()
 			{
@@ -18212,29 +18215,32 @@ namespace Sähköhinta_App.Droid
 			// aapt resource value: 0x7F0801ED
 			public const int widget_container = 2131231213;
 			
-			// aapt resource value: 0x7F0801EF
-			public const int withinBounds = 2131231215;
-			
 			// aapt resource value: 0x7F0801EE
-			public const int withText = 2131231214;
+			public const int widget_refresh = 2131231214;
 			
 			// aapt resource value: 0x7F0801F0
-			public const int wrap = 2131231216;
+			public const int withinBounds = 2131231216;
+			
+			// aapt resource value: 0x7F0801EF
+			public const int withText = 2131231215;
 			
 			// aapt resource value: 0x7F0801F1
-			public const int wrap_content = 2131231217;
+			public const int wrap = 2131231217;
 			
 			// aapt resource value: 0x7F0801F2
-			public const int wrap_content_constrained = 2131231218;
+			public const int wrap_content = 2131231218;
 			
 			// aapt resource value: 0x7F0801F3
-			public const int x_left = 2131231219;
+			public const int wrap_content_constrained = 2131231219;
 			
 			// aapt resource value: 0x7F0801F4
-			public const int x_right = 2131231220;
+			public const int x_left = 2131231220;
 			
 			// aapt resource value: 0x7F0801F5
-			public const int zero_corner_chip = 2131231221;
+			public const int x_right = 2131231221;
+			
+			// aapt resource value: 0x7F0801F6
+			public const int zero_corner_chip = 2131231222;
 			
 			static Id()
 			{
@@ -19279,6 +19285,9 @@ namespace Sähköhinta_App.Droid
 			
 			// aapt resource value: 0x7F0E007D
 			public const int v7_preference_on = 2131624061;
+			
+			// aapt resource value: 0x7F0E007E
+			public const int widget_description = 2131624062;
 			
 			static String()
 			{

@@ -63,6 +63,7 @@
     </PackageReference>
     <PackageReference Include="Xamarin.Forms" Version="5.0.0.2515" />
     <PackageReference Include="Xamarin.Essentials" Version="1.7.3" />
+    <PackageReference Include="Xamarin.AndroidX.Core" Version="1.12.0.3" />
     <PackageReference Include="Xamarin.AndroidX.Lifecycle.LiveData" Version="2.6.2.3" />
     <PackageReference Include="Xamarin.AndroidX.Lifecycle.LiveData.Core" Version="2.6.2.3" />
     <PackageReference Include="Xamarin.AndroidX.Lifecycle.Runtime" Version="2.6.2.3" />
@@ -104,6 +105,8 @@
     <AndroidResource Include="Resources\drawable\price_card_background.xml" />
     <AndroidResource Include="Resources\drawable\widget_background.xml" />
     <AndroidResource Include="Resources\drawable\ic_stat_electric.xml" />
+    <AndroidResource Include="Resources\drawable\ic_widget_refresh.xml" />
+    <AndroidResource Include="Resources\values\strings.xml" />
     <AndroidResource Include="Resources\xml\widget_info.xml" />
     <AndroidResource Include="Resources\layout\widget_layout.xml" />
   </ItemGroup>

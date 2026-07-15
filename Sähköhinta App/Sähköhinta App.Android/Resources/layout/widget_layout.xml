@@ -21,7 +21,7 @@
             android:text="SähköSpot"
             android:textSize="14sp"
             android:textStyle="bold"
-            android:textColor="#3498DB"
+            android:textColor="#5EEAD4"
             android:layout_weight="1" />
             
         <TextView
@@ -30,7 +30,16 @@
             android:layout_height="wrap_content"
             android:text="Päivitetty --:--"
             android:textSize="10sp"
-            android:textColor="#7F8C8D" />
+            android:textColor="#8FA0C9" />
+
+        <ImageView
+            android:id="@+id/widget_refresh"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:layout_marginLeft="6dp"
+            android:padding="4dp"
+            android:src="@drawable/ic_widget_refresh"
+            android:contentDescription="Päivitä hinnat" />
     </LinearLayout>
 
     <!-- Current Price Section -->
@@ -48,7 +57,7 @@
             android:layout_height="wrap_content"
             android:text="Hinta nyt"
             android:textSize="11sp"
-            android:textColor="#7F8C8D" />
+            android:textColor="#8FA0C9" />
             
         <TextView
             android:id="@+id/current_price_value"
@@ -57,7 +66,7 @@
             android:text="-- c/kWh"
             android:textSize="20sp"
             android:textStyle="bold"
-            android:textColor="#2C3E50" />
+            android:textColor="#E6EBFF" />
     </LinearLayout>
 
     <!-- Price Chart -->
@@ -74,7 +83,7 @@
             android:layout_height="wrap_content"
             android:text="Päivän hinnat"
             android:textSize="10sp"
-            android:textColor="#7F8C8D"
+            android:textColor="#8FA0C9"
             android:paddingBottom="2dp" />
             
         <ImageView

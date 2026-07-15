@@ -25,8 +25,7 @@ namespace Sahkonhinta_App.Droid
             RequestNotificationPermission();
 
             WidgetUpdateScheduler.ScheduleWidgetUpdates(this);
-            WidgetUpdateScheduler.TriggerImmediateUpdate(this);
-            _ = Task.Run(() => PriceWidgetProvider.RefreshAllWidgetsAsync(this, forceRefresh: true));
+            WidgetUpdateScheduler.TriggerImmediateUpdate(this, forceRefresh: true);
         }
         public override void OnRequestPermissionsResult(int requestCode, string[] permissions, [GeneratedEnum] Android.Content.PM.Permission[] grantResults)
         {
