@@ -135,18 +135,30 @@ namespace Sahkonhinta_App
 
             if (currentPrice != null)
             {
-                priceFieldNow.Text = $"Hinta nyt: {(currentPrice.value / 10 * taxPercentage + spotProvision):F} c/kWh";
+                priceFieldNow.Text = $"{(currentPrice.value / 10 * taxPercentage + spotProvision):F} c/kWh";
             }
             else
             {
-                priceFieldNow.Text = "Hinta nyt: - c/kWh";
+                priceFieldNow.Text = "- c/kWh";
             }
 
+            // Tercile bounds of the day's displayed prices drive the semantic colors
+            var displayedToday = todayPrices
+                .Select(x => x.value / 10 * taxPercentage + spotProvision)
+                .OrderBy(v => v)
+                .ToList();
+            var (lowBoundToday, midBoundToday) = GetTercileBounds(displayedToday);
+
             // Prepare display data with converted timezone and applied tax
-            var rowsToday = todayPrices.Select(x => new
+            var rowsToday = todayPrices.Select(x =>
             {
-                date = TimeZoneInfo.ConvertTimeFromUtc(x.date, localTimeZone),
-                value = x.value / 10 * taxPercentage + spotProvision
+                var displayValue = x.value / 10 * taxPercentage + spotProvision;
+                return new
+                {
+                    date = TimeZoneInfo.ConvertTimeFromUtc(x.date, localTimeZone),
+                    value = displayValue,
+                    color = GetPriceColor(displayValue, lowBoundToday, midBoundToday)
+                };
             }).OrderBy(x => x.date).ToList();
 
             priceListView.ItemsSource = rowsToday;
@@ -175,11 +187,23 @@ namespace Sahkonhinta_App
                 lowPriceTomorrow.Text = $"{(dailyMinTomorrow / 10 * taxPercentage + spotProvision):F} c/kWh";
                 avgPriceTomorrow.Text = $"{(dailyAvgTomorrow / 10 * taxPercentage + spotProvision):F} c/kWh";
 
+                // Tercile bounds for tomorrow's displayed prices
+                var displayedTomorrow = tomorrowPrices
+                    .Select(x => x.value / 10 * taxPercentage + spotProvision)
+                    .OrderBy(v => v)
+                    .ToList();
+                var (lowBoundTomorrow, midBoundTomorrow) = GetTercileBounds(displayedTomorrow);
+
                 // Prepare display data
-                var rowsTomorrow = tomorrowPrices.Select(x => new
+                var rowsTomorrow = tomorrowPrices.Select(x =>
                 {
-                    date = TimeZoneInfo.ConvertTimeFromUtc(x.date, localTimeZone),
-                    value = x.value / 10 * taxPercentage + spotProvision
+                    var displayValue = x.value / 10 * taxPercentage + spotProvision;
+                    return new
+                    {
+                        date = TimeZoneInfo.ConvertTimeFromUtc(x.date, localTimeZone),
+                        value = displayValue,
+                        color = GetPriceColor(displayValue, lowBoundTomorrow, midBoundTomorrow)
+                    };
                 }).OrderBy(x => x.date).ToList();
 
                 priceListViewTomorrow.ItemsSource = rowsTomorrow;
@@ -404,15 +428,20 @@ namespace Sahkonhinta_App
             double slotPadding = slotWidth - barWidth;
             double chartStartX = axisLabelWidth;
 
-            bool isDarkTheme = Application.Current.RequestedTheme == OSAppTheme.Dark;
-            Color primaryTextColor = isDarkTheme ? Color.White : Color.Black;
-            Color secondaryTextColor = isDarkTheme ? Color.FromHex("#BDC3C7") : Color.FromHex("#7F8C8D");
-            Color axisLineColor = isDarkTheme ? Color.FromHex("#4C5862") : Color.FromHex("#D8E0E6");
+            // Aurora dark theme (dark-only)
+            Color primaryTextColor = Color.FromHex("#E6EBFF");
+            Color secondaryTextColor = Color.FromHex("#8FA0C9");
+            Color axisTickColor = Color.FromHex("#9FB0D8");
+            Color axisLineColor = Color.FromHex("#949FD8");
+
+            // Tercile bounds drive the semantic bar colors (mint/amber/rose)
+            var sortedChartValues = priceList.Select(p => (double)p.value).OrderBy(v => v).ToList();
+            var (chartLowBound, chartMidBound) = GetTercileBounds(sortedChartValues);
 
             // Horizontal guides (max / mid / min) - ensure they don't exceed drawable width
-            AddHorizontalGuide(topPadding, drawableWidth, axisLineColor, 1);
-            AddHorizontalGuide(topPadding + drawableHeight / 2, drawableWidth, axisLineColor, 0.8, 0.35);
-            AddHorizontalGuide(topPadding + drawableHeight, drawableWidth, axisLineColor, 1);
+            AddHorizontalGuide(topPadding, drawableWidth, axisLineColor, 1, 0.18);
+            AddHorizontalGuide(topPadding + drawableHeight / 2, drawableWidth, axisLineColor, 0.8, 0.12);
+            AddHorizontalGuide(topPadding + drawableHeight, drawableWidth, axisLineColor, 1, 0.18);
 
             // Price scale labels on the left
             AddYAxisLabel(maxPrice, new Rectangle(0, topPadding - 10, axisLabelWidth - 4, 16));
@@ -425,7 +454,7 @@ namespace Sahkonhinta_App
                 double normalized = (price - minPrice) / priceRange;
                 double barHeight = Math.Max(3, normalized * drawableHeight);
 
-                Color barColor = GetPriceColor(price, minPrice, maxPrice);
+                Color barColor = GetPriceColor(price, chartLowBound, chartMidBound);
                 double slotOffset = chartStartX + i * slotWidth + slotPadding / 2;
 
                 // Ensure bar doesn't exceed container bounds
@@ -434,9 +463,10 @@ namespace Sahkonhinta_App
                     barWidth = Math.Max(2, chartWidth - slotOffset - rightPadding);
                 }
 
+                // Glass treatment: translucent fill + luminous top edge in the category color
                 var bar = new BoxView
                 {
-                    Color = barColor,
+                    Color = new Color(barColor.R, barColor.G, barColor.B, 0.28),
                     WidthRequest = barWidth,
                     HeightRequest = barHeight,
                     CornerRadius = 2
@@ -449,6 +479,22 @@ namespace Sahkonhinta_App
                     barHeight));
                 AbsoluteLayout.SetLayoutFlags(bar, AbsoluteLayoutFlags.None);
                 chartContainer.Children.Add(bar);
+
+                var barEdge = new BoxView
+                {
+                    Color = new Color(barColor.R, barColor.G, barColor.B, 0.85),
+                    WidthRequest = barWidth,
+                    HeightRequest = 2,
+                    CornerRadius = 1
+                };
+
+                AbsoluteLayout.SetLayoutBounds(barEdge, new Rectangle(
+                    slotOffset,
+                    topPadding + drawableHeight - barHeight,
+                    barWidth,
+                    2));
+                AbsoluteLayout.SetLayoutFlags(barEdge, AbsoluteLayoutFlags.None);
+                chartContainer.Children.Add(barEdge);
 
                 // Show price label above taller bars
                 if (barHeight >= 18 && slotWidth >= 12)
@@ -547,7 +593,7 @@ namespace Sahkonhinta_App
                 {
                     Text = $"{value:0.0}",
                     FontSize = 9,
-                    TextColor = secondaryTextColor,
+                    TextColor = axisTickColor,
                     HorizontalTextAlignment = TextAlignment.End,
                     VerticalTextAlignment = TextAlignment.Center
                 };
@@ -571,17 +617,26 @@ namespace Sahkonhinta_App
             }
         }
 
-        private Color GetPriceColor(double price, double min, double max)
+        // Tercile-based categorization: sort the day's prices, split into thirds;
+        // each price is colored by which third it falls in (Aurora semantic colors).
+        private static (double lowBound, double midBound) GetTercileBounds(List<double> sortedValues)
         {
-            double range = max - min;
-            double position = (price - min) / range;
-            
-            if (position < 0.33)
-                return Color.FromHex("#27AE60"); // Green
-            else if (position < 0.66)
-                return Color.FromHex("#F39C12"); // Orange
-            else
-                return Color.FromHex("#E74C3C"); // Red
+            int n = sortedValues.Count;
+            if (n == 0)
+                return (0, 0);
+
+            double lowBound = sortedValues[Math.Max(0, (int)Math.Ceiling(n / 3.0) - 1)];
+            double midBound = sortedValues[Math.Max(0, (int)Math.Ceiling(n * 2 / 3.0) - 1)];
+            return (lowBound, midBound);
+        }
+
+        private Color GetPriceColor(double price, double lowBound, double midBound)
+        {
+            if (price <= lowBound)
+                return Color.FromHex("#34D399"); // Mint (cheapest tercile)
+            if (price <= midBound)
+                return Color.FromHex("#FBBF24"); // Amber (middle tercile)
+            return Color.FromHex("#FB7185");     // Rose (most expensive tercile)
         }
     }
 }
