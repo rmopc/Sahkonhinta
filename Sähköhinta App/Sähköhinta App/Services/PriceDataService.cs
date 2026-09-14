@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Globalization;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
@@ -26,6 +28,29 @@ namespace Sahkonhinta_App.Services
     {
         private const string API_URL = "https://oljemark.net/electricity_prices.json";
 
+        // Shared for the lifetime of the app. HttpClient is documented as safe for
+        // concurrent use across threads (MainPage's UI thread and the widget's
+        // WorkManager background thread both call into this class). Reusing one
+        // instance avoids per-call socket/TLS handshake overhead.
+        // Deliberately NOT passing a custom HttpClientHandler here: the Android project
+        // sets AndroidHttpClientHandlerType to Xamarin.Android.Net.AndroidClientHandler
+        // so that new HttpClient() uses Android's native TLS stack (needed for modern
+        // cert chains); constructing our own HttpClientHandler would silently override
+        // that with Mono's managed handler and break HTTPS to the API.
+        private static readonly HttpClient httpClient = new HttpClient
+        {
+            Timeout = TimeSpan.FromSeconds(30)
+        };
+
+        // Short-lived in-memory cache so forceRefresh:false calls within a few minutes
+        // of each other (e.g. MainPage re-appearing) skip the network fetch + parse.
+        private static readonly object _cacheLock = new object();
+        private static readonly TimeSpan CacheTtl = TimeSpan.FromMinutes(5);
+        private static DateTime _cacheTimestampUtc = DateTime.MinValue;
+        private static DateTime _cacheTodayLocalDate = DateTime.MinValue;
+        private static DayPriceData _cachedToday;
+        private static DayPriceData _cachedTomorrow;
+
         public static async Task<(DayPriceData today, DayPriceData tomorrow)> GetPriceDataAsync(bool forceRefresh = false)
         {
             try
@@ -35,7 +60,25 @@ namespace Sahkonhinta_App.Services
                 var todayLocal = nowLocal.Date;
                 var tomorrowLocal = todayLocal.AddDays(1);
 
+                if (!forceRefresh)
+                {
+                    lock (_cacheLock)
+                    {
+                        if (_cachedToday != null
+                            && DateTime.UtcNow - _cacheTimestampUtc < CacheTtl
+                            && _cacheTodayLocalDate == todayLocal)
+                        {
+                            Console.WriteLine("Returning cached price data");
+                            return (_cachedToday, _cachedTomorrow);
+                        }
+                    }
+                }
+
+                var fetchStopwatch = Stopwatch.StartNew();
                 var jsonObject = await FetchPriceDataFromApiAsync();
+                fetchStopwatch.Stop();
+                Console.WriteLine($"Price data fetch took {fetchStopwatch.ElapsedMilliseconds} ms");
+
                 if (jsonObject == null)
                 {
                     Console.WriteLine("Failed to fetch price data from API");
@@ -50,17 +93,15 @@ namespace Sahkonhinta_App.Services
                     return (null, null);
                 }
 
-                // Parse all prices and group by date
-                var allPrices = ParseAllPricesFromArray(pricesArray);
-
-                // Separate today's and tomorrow's 15-minute prices
-                var todayFifteenMinPrices = allPrices.Where(p =>
-                    TimeZoneInfo.ConvertTimeFromUtc(p.date, localTimeZone).Date == todayLocal
-                ).ToList();
-
-                var tomorrowFifteenMinPrices = allPrices.Where(p =>
-                    TimeZoneInfo.ConvertTimeFromUtc(p.date, localTimeZone).Date == tomorrowLocal
-                ).ToList();
+                // Parse only today's/tomorrow's entries in a single pass over the array
+                // (the array may contain many months of history; see ParseTodayAndTomorrowFromArray)
+                var parseStopwatch = Stopwatch.StartNew();
+                var todayDatePrefix = todayLocal.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+                var tomorrowDatePrefix = tomorrowLocal.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+                var (todayFifteenMinPrices, tomorrowFifteenMinPrices) =
+                    ParseTodayAndTomorrowFromArray(pricesArray, todayDatePrefix, tomorrowDatePrefix);
+                parseStopwatch.Stop();
+                Console.WriteLine($"Price data parse took {parseStopwatch.ElapsedMilliseconds} ms ({pricesArray.Count} total entries in response)");
 
                 // Generate hourly averages from 15-minute data
                 var todayHourlyPrices = GenerateHourlyAverages(todayFifteenMinPrices, localTimeZone);
@@ -96,6 +137,17 @@ namespace Sahkonhinta_App.Services
                     Console.WriteLine($"Tomorrow's data incomplete: only {tomorrowHourlyPrices.Count} hours available (need more than 4)");
                 }
 
+                if (todayData != null)
+                {
+                    lock (_cacheLock)
+                    {
+                        _cachedToday = todayData;
+                        _cachedTomorrow = tomorrowData;
+                        _cacheTimestampUtc = DateTime.UtcNow;
+                        _cacheTodayLocalDate = todayLocal;
+                    }
+                }
+
                 return (todayData, tomorrowData);
             }
             catch (Exception ex)
@@ -105,38 +157,48 @@ namespace Sahkonhinta_App.Services
             }
         }
 
-        private static List<Price> ParseAllPricesFromArray(JArray priceArray)
+        // Walks the (potentially many-months-long) prices array once and keeps only
+        // entries matching today's or tomorrow's local date, parsing/allocating only
+        // for those. Each entry's datetime string already carries the correct Helsinki
+        // UTC offset for that instant, so its first 10 characters ("yyyy-MM-dd") are
+        // already the correct Helsinki local calendar date - comparing that prefix is
+        // equivalent to TimeZoneInfo.ConvertTimeFromUtc(...).Date but without paying for
+        // a parse + timezone conversion on every discarded historical entry.
+        private static (List<Price> today, List<Price> tomorrow) ParseTodayAndTomorrowFromArray(
+            JArray priceArray, string todayDatePrefix, string tomorrowDatePrefix)
         {
-            var prices = new List<Price>();
+            var today = new List<Price>();
+            var tomorrow = new List<Price>();
             if (priceArray == null)
-                return prices;
+                return (today, tomorrow);
 
             foreach (var item in priceArray)
             {
                 try
                 {
-                    // Parse the datetime field which includes timezone offset
                     var datetimeStr = item["datetime"]?.ToString();
-                    if (string.IsNullOrEmpty(datetimeStr))
+                    if (string.IsNullOrEmpty(datetimeStr) || datetimeStr.Length < 10)
                         continue;
 
-                    var datetime = DateTimeOffset.Parse(datetimeStr);
-                    var datetimeUtc = datetime.UtcDateTime;
+                    bool isToday = datetimeStr.StartsWith(todayDatePrefix, StringComparison.Ordinal);
+                    bool isTomorrow = !isToday && datetimeStr.StartsWith(tomorrowDatePrefix, StringComparison.Ordinal);
+                    if (!isToday && !isTomorrow)
+                        continue;
 
                     // Use price_cents_kwh which is already converted to c/kWh
                     var priceCentsKwh = (double?)item["price_cents_kwh"];
                     if (!priceCentsKwh.HasValue)
                         continue;
 
+                    var datetime = DateTimeOffset.Parse(datetimeStr);
+                    var datetimeUtc = datetime.UtcDateTime;
+
                     // Convert back to the internal format (EUR/MWh * 10) for compatibility
                     // price_cents_kwh is in c/kWh, so multiply by 10 to get EUR/MWh * 10
                     var priceValue = priceCentsKwh.Value * 10;
 
-                    prices.Add(new Price
-                    {
-                        date = datetimeUtc,
-                        value = priceValue
-                    });
+                    var price = new Price { date = datetimeUtc, value = priceValue };
+                    (isToday ? today : tomorrow).Add(price);
                 }
                 catch (Exception ex)
                 {
@@ -145,7 +207,10 @@ namespace Sahkonhinta_App.Services
                 }
             }
 
-            return prices.OrderBy(p => p.date).ToList();
+            today.Sort((a, b) => a.date.CompareTo(b.date));
+            tomorrow.Sort((a, b) => a.date.CompareTo(b.date));
+
+            return (today, tomorrow);
         }
 
         private static List<Price> GenerateHourlyAverages(List<Price> fifteenMinutePrices, TimeZoneInfo localTimeZone)
@@ -186,31 +251,37 @@ namespace Sahkonhinta_App.Services
         {
             try
             {
-                using (var httpClient = new HttpClient())
+                var response = await httpClient.GetAsync(API_URL);
+                response.EnsureSuccessStatusCode();
+
+                var json = await response.Content.ReadAsStringAsync();
+
+                if (string.IsNullOrEmpty(json) || json.Length > 10000000)
                 {
-                    httpClient.Timeout = TimeSpan.FromSeconds(30);
-                    var response = await httpClient.GetAsync(API_URL);
-                    response.EnsureSuccessStatusCode();
-
-                    var json = await response.Content.ReadAsStringAsync();
-
-                    if (string.IsNullOrEmpty(json) || json.Length > 10000000)
-                    {
-                        Console.WriteLine("Invalid API response: empty or too large");
-                        return null;
-                    }
-
-                    var jsonObject = JObject.Parse(json);
-
-                    if (jsonObject?["prices"] == null)
-                    {
-                        Console.WriteLine("Invalid API response: missing 'prices' array");
-                        return null;
-                    }
-
-                    Console.WriteLine("Successfully fetched fresh price data from API");
-                    return jsonObject;
+                    Console.WriteLine("Invalid API response: empty or too large");
+                    return null;
                 }
+
+                // DateParseHandling.None keeps "datetime" values as plain strings exactly as
+                // sent by the API (e.g. "2025-12-31T01:00:00+02:00"). Without this, JObject.Parse
+                // auto-converts recognized date strings into DateTime-typed tokens, and reading
+                // them back via ToString() formats using CultureInfo.CurrentCulture (fi-FI here,
+                // set by MainActivity) instead of preserving the original ISO string/offset.
+                JObject jsonObject;
+                using (var stringReader = new System.IO.StringReader(json))
+                using (var jsonTextReader = new JsonTextReader(stringReader) { DateParseHandling = DateParseHandling.None })
+                {
+                    jsonObject = JObject.Load(jsonTextReader);
+                }
+
+                if (jsonObject?["prices"] == null)
+                {
+                    Console.WriteLine("Invalid API response: missing 'prices' array");
+                    return null;
+                }
+
+                Console.WriteLine("Successfully fetched fresh price data from API");
+                return jsonObject;
             }
             catch (Exception ex)
             {
